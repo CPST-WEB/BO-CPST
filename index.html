@@ -2,51 +2,128 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Bureau d'Ordre — Gestion du Courrier</title>
-  <!-- Tailwind CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body{background:#f3f4f6;color:#111827;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
-    .card{border-radius:16px;background:#fff;box-shadow:0 12px 36px rgba(15,23,42,.08);padding:16px;}
-    .btn{display:inline-flex;align-items:center;gap:.5rem;border:1px solid #e5e7eb;border-radius:999px;padding:.55rem 1.2rem;font-weight:600;cursor:pointer;font-size:.9rem;white-space:nowrap;}
-    .btn-primary{background:#1e3a8a;color:#fff;border-color:#1e40af;}
-    .btn-ghost{background:#f8fafc;}
-    .btn-toggle{min-width:11rem;justify-content:center;border-width:2px;}
-    .btn-active{background:#1d4ed8;color:#fff;border-color:#1e40af;}
-    .btn-inactive{background:#fff;color:#1f2937;border-color:#93c5fd;}
-    .input{width:100%;border:1px solid #e5e7eb;border-radius:12px;padding:.55rem .9rem;font-size:.9rem;background:#fff;}
-    .input-lg{padding:.85rem .9rem;font-size:.95rem;}
-    .label{font-size:.75rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.08em;}
-    .tbl-th{text-align:left;font-size:.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;padding:.4rem .35rem;}
-    .tbl-td{font-size:.85rem;color:#111827;padding:.35rem .35rem;vertical-align:top;}
-    .tag-pill{display:inline-flex;align-items:center;padding:.1rem .5rem;border-radius:999px;font-size:.65rem;font-weight:600;}
-    @media print{
-      .no-print{display:none!important}
-      body{background:#fff}
-      .card, header{box-shadow:none!important;border:none!important}
+    .card {
+      border-radius: 16px;
+      background: #ffffff;
+      box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+      padding: 16px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      border: 1px solid #e5e7eb;
+      border-radius: 999px;
+      padding: .55rem 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: .9rem;
+      background: #ffffff;
+      transition: all .15s ease;
+      white-space: nowrap;
+    }
+    .btn:hover {
+      box-shadow: 0 4px 10px rgba(148, 163, 253, 0.25);
+      transform: translateY(-1px);
+    }
+    .btn-primary {
+      background: #1d4ed8;
+      color: #ffffff;
+      border-color: #1d4ed8;
+    }
+    .btn-ghost {
+      background: #f8fafc;
+    }
+    .btn-toggle {
+      min-width: 11rem;
+      justify-content: center;
+      border-width: 2px;
+    }
+    .btn-active {
+      background: #1d4ed8;
+      color: #fff;
+      border-color: #1d4ed8;
+    }
+    .btn-inactive {
+      background: #ffffff;
+      color: #1f2937;
+      border-color: #bfdbfe;
+    }
+    .input {
+      width: 100%;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: .55rem .8rem;
+      font-size: .9rem;
+      background: #ffffff;
+    }
+    .input-lg {
+      padding: .8rem .9rem;
+      font-size: .95rem;
+    }
+    .label {
+      font-size: .72rem;
+      font-weight: 600;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+    .tbl-th {
+      text-align: left;
+      font-size: .7rem;
+      font-weight: 700;
+      color: #6b7280;
+      text-transform: uppercase;
+      padding: .35rem .45rem;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .tbl-td {
+      font-size: .82rem;
+      color: #111827;
+      padding: .4rem .45rem;
+      vertical-align: top;
+    }
+    @media print {
+      .no-print { display: none !important; }
+      body { background: #ffffff; }
+      .card { box-shadow: none; }
+      header { position: static !important; }
     }
   </style>
 </head>
-<body>
-<div class="max-w-7xl mx-auto p-4">
+
+<body class="bg-slate-50 text-slate-900">
+<div class="max-w-7xl mx-auto px-4 py-6 space-y-4">
 
   <!-- ENTÊTE -->
-  <header class="no-print mb-4">
-    <div class="card flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+  <header class="no-print sticky top-0 z-20 bg-white/95 backdrop-blur border border-slate-200 rounded-2xl mb-4 shadow-sm">
+    <div class="px-5 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+
+      <!-- Logo + titre -->
       <div class="flex items-center gap-3">
-        <!-- Logo : le fichier doit s'appeler exactement "logo CPST.png" dans le dépôt -->
-        <img src="logo CPST.png" alt="Conseil Préfectoral Skhirate Témara"
-             class="h-14 w-14 object-contain rounded-lg border border-blue-100 bg-white shadow-sm"/>
+        <img src="logo%20CPST.png"
+             alt="Conseil Préfectoral Skhirate Témara"
+             class="h-12 w-auto object-contain rounded-md bg-white" />
         <div>
-          <div class="text-xs text-slate-500">Conseil Préfectoral Skhirate Témara</div>
-          <div class="text-lg md:text-xl font-extrabold text-slate-900">
+          <div class="text-xs text-slate-500">
+            Conseil Préfectoral Skhirate Témara
+          </div>
+          <div class="text-lg md:text-xl font-bold text-slate-900">
             Bureau d'Ordre — Gestion du Courrier
           </div>
         </div>
       </div>
-      <div class="flex flex-wrap gap-2 justify-start md:justify-end">
-        <input id="fileJson" type="file" accept=".json,application/json" class="hidden">
+
+      <!-- Boutons -->
+      <div class="flex flex-wrap gap-2 justify-start md:justify-end items-center">
+        <span id="userLabel" class="text-[10px] text-slate-500 mr-1 hidden"></span>
+        <button class="btn btn-ghost" id="btnUser">Changer d'utilisateur</button>
+
+        <input id="fileJson" type="file" accept=".json,application/json" class="hidden" />
         <button class="btn btn-ghost" id="btnImport">Importer JSON</button>
         <button class="btn btn-ghost" id="btnExportPDF">Exporter PDF</button>
         <button class="btn btn-primary" id="btnNew">Nouveau courrier</button>
@@ -55,13 +132,13 @@
   </header>
 
   <!-- FILTRES -->
-  <section class="card no-print mb-4">
+  <section class="card no-print">
     <div class="grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
       <div class="md:col-span-3">
         <div class="label">Recherche</div>
         <input id="search" class="input" placeholder="Objet, n°, expéditeur, destinataire, référence…" />
       </div>
-      <div>
+      <div class="md:col-span-2">
         <div class="label">Type</div>
         <select id="filterType" class="input">
           <option value="">Tous</option>
@@ -69,46 +146,46 @@
           <option value="sortant">Sortant</option>
         </select>
       </div>
-      <div class="md:col-span-2 text-right text-[0.7rem] text-slate-500">
-        Données stockées dans ce navigateur (localStorage).
-        <br/>Si Firebase est configuré, chaque courrier est aussi sauvegardé dans le cloud.
+      <div class="md:col-span-1 text-[10px] text-right text-slate-500">
+        Données stockées localement dans ce navigateur (localStorage).
       </div>
     </div>
   </section>
 
   <!-- STATS -->
-  <section id="stats" class="grid grid-cols-2 md:grid-cols-6 gap-3 mb-4 no-print"></section>
+  <section id="stats" class="grid grid-cols-2 md:grid-cols-6 gap-3 no-print"></section>
 
   <!-- TABLEAU -->
   <section class="card">
-    <div class="overflow-x-auto">
-      <table class="min-w-full" id="tbl">
-        <thead>
-          <tr>
-            <th class="tbl-th">Type</th>
-            <th class="tbl-th">N°</th>
-            <th class="tbl-th">Date</th>
-            <th class="tbl-th">Expéditeur / Destinataire</th>
-            <th class="tbl-th">Objet</th>
-            <th class="tbl-th">Service</th>
-            <th class="tbl-th">Priorité</th>
-            <th class="tbl-th">Échéance</th>
-            <th class="tbl-th">Statut</th>
-            <th class="tbl-th no-print">Pièces</th>
-            <th class="tbl-th no-print">Actions</th>
-          </tr>
-        </thead>
-        <tbody id="tbody" class="divide-y"></tbody>
-      </table>
-    </div>
+    <table class="min-w-full" id="tbl">
+      <thead>
+      <tr>
+        <th class="tbl-th">Type</th>
+        <th class="tbl-th">N°</th>
+        <th class="tbl-th">Date</th>
+        <th class="tbl-th">Expéditeur / Destinataire</th>
+        <th class="tbl-th">Objet</th>
+        <th class="tbl-th">Service</th>
+        <th class="tbl-th">Priorité</th>
+        <th class="tbl-th">Échéance</th>
+        <th class="tbl-th">Statut</th>
+        <th class="tbl-th no-print">Pièces</th>
+        <th class="tbl-th no-print">Actions</th>
+      </tr>
+      </thead>
+      <tbody id="tbody" class="divide-y divide-slate-100"></tbody>
+    </table>
   </section>
 
 </div>
 
 <script>
-  // ================== CONFIG LOCALE ==================
+  // ==========================
+  //   CONFIG & DONNÉES
+  // ==========================
   const KEY = "bo_cpst_courrier_v1";
 
+  // Services destinataires / expéditeurs
   const SERVICES = [
     "Secrétariat",
     "Direction des Affaires de la Présidence",
@@ -122,78 +199,143 @@
     "Bureau d'information et Numérisation"
   ];
 
-  function $(s,p){ return (p||document).querySelector(s); }
+  // Comptes internes
+  const ACCOUNTS = {
+    bo:      { password: "1234", canEdit: true },   // Bureau d'ordre
+    consult: { password: "1234", canEdit: false }   // Consultation
+  };
+
+  let CURRENT_USER = null;
+  let CAN_EDIT = false;
+
+  function $(sel, parent){ return (parent || document).querySelector(sel); }
 
   let ROWS = [];
-  try { ROWS = JSON.parse(localStorage.getItem(KEY) || "[]") || []; }
-  catch(e){ ROWS = []; }
+  try {
+    ROWS = JSON.parse(localStorage.getItem(KEY) || "[]") || [];
+  } catch(e) {
+    ROWS = [];
+  }
 
-  function saveLocal(){
+  function saveLocal() {
     localStorage.setItem(KEY, JSON.stringify(ROWS));
   }
 
-  // ================== OUTILS ==================
-  function dangerDate(echeance){
-    if(!echeance) return "";
+  // ==========================
+  //   GESTION ROLES / LOGIN
+  // ==========================
+  function applyRole() {
+    const userLabel = document.getElementById("userLabel");
+    CAN_EDIT = !!(CURRENT_USER && CURRENT_USER.canEdit);
+
+    if (CURRENT_USER) {
+      userLabel.textContent =
+        `Connecté : ${CURRENT_USER.name} (${CAN_EDIT ? "édition" : "consultation"})`;
+      userLabel.classList.remove("hidden");
+    } else {
+      userLabel.textContent = "";
+      userLabel.classList.add("hidden");
+    }
+
+    // Boutons réservés aux éditeurs
+    document.getElementById("btnNew").style.display    = CAN_EDIT ? "inline-flex" : "none";
+    document.getElementById("btnImport").style.display = CAN_EDIT ? "inline-flex" : "none";
+
+    // Export PDF reste visible pour tous
+    renderAll();
+  }
+
+  function loginUser() {
+    const u = prompt("Nom d'utilisateur :\n- bo\n- consult");
+    if (!u) return;
+    const account = ACCOUNTS[u.trim()];
+    if (!account) {
+      alert("Utilisateur inconnu.");
+      return loginUser();
+    }
+    const pwd = prompt("Mot de passe :");
+    if (pwd !== account.password) {
+      alert("Mot de passe incorrect.");
+      return loginUser();
+    }
+    CURRENT_USER = { name: u.trim(), canEdit: account.canEdit };
+    applyRole();
+  }
+
+  // ==========================
+  //   OUTILS
+  // ==========================
+  function dangerDate(echeance) {
+    if (!echeance) return "";
     const d = new Date(echeance);
-    if(isNaN(d)) return "";
-    const today = new Date();
-    const diff = (d - today) / (1000*3600*24);
-    if(diff < 0) return "bg-red-50";
-    if(diff <= 3) return "bg-yellow-50";
+    const now = new Date();
+    const diff = (d - now) / (1000 * 3600 * 24);
+    if (isNaN(diff)) return "";
+    if (diff < 0) return "bg-red-50";
+    if (diff <= 3) return "bg-amber-50";
     return "";
   }
 
-  // ================== STATS ==================
-  function renderStats(){
+  // ==========================
+  //   STATS
+  // ==========================
+  function renderStats() {
     const r = ROWS;
     const total = r.length;
-    const entrants = r.filter(x=>x.type==="entrant").length;
-    const sortants = r.filter(x=>x.type==="sortant").length;
-    const enTraitement = r.filter(x=>x.statut==="En traitement").length;
-    const urgents = r.filter(x=>x.priorite && x.priorite !== "Normal").length;
-    const late = r.filter(x=>x.echeance && new Date(x.echeance) < new Date()).length;
+    const entrants = r.filter(x => x.type === "entrant").length;
+    const sortants = r.filter(x => x.type === "sortant").length;
+    const enTrait = r.filter(x => x.statut === "En traitement").length;
+    const urg = r.filter(x => x.priorite && x.priorite !== "Normal").length;
+    const late = r.filter(x =>
+      x.echeance && new Date(x.echeance) < new Date()
+    ).length;
 
-    function card(label, value){
+    function bloc(label, value){
       return `
-        <div class="card py-3 px-4">
-          <div class="text-[0.7rem] uppercase tracking-wide text-slate-500">${label}</div>
-          <div class="text-2xl font-extrabold text-slate-900">${value}</div>
+        <div class="card flex flex-col gap-1">
+          <div class="text-[10px] uppercase tracking-wide text-slate-500">${label}</div>
+          <div class="text-2xl font-bold text-slate-900">${value}</div>
         </div>`;
     }
 
     $("#stats").innerHTML =
-      card("Total", total) +
-      card("Entrants", entrants) +
-      card("Sortants", sortants) +
-      card("En traitement", enTraitement) +
-      card("Urgents", urgents) +
-      card("Échéances dépassées", late);
+      bloc("Total", total) +
+      bloc("Entrants", entrants) +
+      bloc("Sortants", sortants) +
+      bloc("En traitement", enTrait) +
+      bloc("Urgents", urg) +
+      bloc("Échéances dépassées", late);
   }
 
-  // ================== TABLEAU ==================
-  function renderTable(){
+  // ==========================
+  //   TABLEAU
+  // ==========================
+  function renderTable() {
     const tb = $("#tbody");
     const fText = ($("#search").value || "").toLowerCase();
     const fType = $("#filterType").value || "";
 
     let rows = ROWS.slice();
 
-    if(fType) rows = rows.filter(r=>r.type === fType);
+    if (fType) {
+      rows = rows.filter(r => r.type === fType);
+    }
 
-    if(fText){
-      rows = rows.filter(r => (
-        (r.objet || "").toLowerCase().includes(fText) ||
-        (r.numero || "").toLowerCase().includes(fText) ||
-        (r.expediteur || "").toLowerCase().includes(fText) ||
-        (r.destinataire || "").toLowerCase().includes(fText) ||
-        (r.reference || "").toLowerCase().includes(fText)
-      ));
+    if (fText) {
+      rows = rows.filter(r => {
+        return (
+          (r.objet || "").toLowerCase().includes(fText) ||
+          (r.numero || "").toLowerCase().includes(fText) ||
+          (r.expediteur || "").toLowerCase().includes(fText) ||
+          (r.destinataire || "").toLowerCase().includes(fText) ||
+          (r.reference || "").toLowerCase().includes(fText)
+        );
+      });
     }
 
     tb.innerHTML = "";
 
-    if(rows.length === 0){
+    if (!rows.length) {
       const tr = document.createElement("tr");
       const td = document.createElement("td");
       td.colSpan = 11;
@@ -208,33 +350,38 @@
       const tr = document.createElement("tr");
       tr.className = dangerDate(r.echeance);
 
-      const addCell = (v, extra="") => {
+      function addCell(v){
         const td = document.createElement("td");
-        td.className = "tbl-td " + extra;
+        td.className = "tbl-td";
         td.textContent = v || "";
         tr.appendChild(td);
-      };
+      }
 
       addCell(r.type === "entrant" ? "Entrant" : "Sortant");
-      addCell(r.numero);
-      addCell(r.date);
-      addCell(r.type === "entrant" ? (r.expediteur || "-") : (r.destinataire || "-"));
-      addCell(r.objet);
-      addCell(r.service);
-      addCell(r.priorite);
+      addCell(r.numero || "");
+      addCell(r.date || "");
+      addCell(
+        r.type === "entrant"
+          ? (r.expediteur || "-")
+          : (r.destinataire || "-")
+      );
+      addCell(r.objet || "");
+      addCell(r.service || "");
+      addCell(r.priorite || "");
       addCell(r.echeance || "-");
-      addCell(r.statut);
+      addCell(r.statut || "");
 
       // Pièces
       const tdP = document.createElement("td");
       tdP.className = "tbl-td no-print";
-      if(r.attachments && r.attachments.length){
-        const link = document.createElement("a");
-        link.href = "#";
-        link.textContent = "Voir";
-        link.className = "text-blue-600 underline";
-        link.onclick = ev => { ev.preventDefault(); viewPieces(r); };
-        tdP.appendChild(link);
+      const hasPieces = r.attachments && r.attachments.length;
+      if (hasPieces) {
+        const a = document.createElement("a");
+        a.href = "#";
+        a.textContent = "Voir";
+        a.className = "text-blue-600 underline";
+        a.onclick = ev => { ev.preventDefault(); viewPieces(r); };
+        tdP.appendChild(a);
       } else {
         tdP.textContent = "-";
         tdP.classList.add("text-slate-400");
@@ -244,92 +391,110 @@
       // Actions
       const tdA = document.createElement("td");
       tdA.className = "tbl-td no-print";
-      const e1 = document.createElement("a");
-      e1.href = "#";
-      e1.textContent = "Modifier";
-      e1.className = "text-blue-600 underline mr-3";
-      e1.onclick = ev => { ev.preventDefault(); openForm(r); };
-      const e2 = document.createElement("a");
-      e2.href = "#";
-      e2.textContent = "Supprimer";
-      e2.className = "text-red-600 underline";
-      e2.onclick = ev => {
-        ev.preventDefault();
-        if(confirm("Supprimer ce courrier ?")){
-          ROWS = ROWS.filter(x => x.id !== r.id);
-          saveLocal();
-          renderAll();
-        }
-      };
-      tdA.appendChild(e1);
-      tdA.appendChild(e2);
-      tr.appendChild(tdA);
 
+      if (CAN_EDIT) {
+        const e1 = document.createElement("a");
+        e1.href = "#";
+        e1.textContent = "Modifier";
+        e1.className = "text-blue-600 underline mr-3";
+        e1.onclick = ev => { ev.preventDefault(); openForm(r); };
+
+        const e2 = document.createElement("a");
+        e2.href = "#";
+        e2.textContent = "Supprimer";
+        e2.className = "text-red-600 underline";
+        e2.onclick = ev => {
+          ev.preventDefault();
+          if (confirm("Supprimer ce courrier ?")) {
+            ROWS = ROWS.filter(x => x.id !== r.id);
+            saveLocal();
+            renderAll();
+          }
+        };
+
+        tdA.appendChild(e1);
+        tdA.appendChild(e2);
+      } else {
+        tdA.textContent = "-";
+        tdA.classList.add("text-slate-400");
+      }
+
+      tr.appendChild(tdA);
       tb.appendChild(tr);
     });
   }
 
-  // ================== MODALE GÉNÉRIQUE ==================
-  function openModal(title, contentEl){
+  // ==========================
+  //   MODAL GÉNÉRIQUE
+  // ==========================
+  function openModal(title, contentEl) {
     const old = document.getElementById("__modal");
-    if(old) old.remove();
+    if (old) old.remove();
 
     const modal = document.createElement("div");
     modal.id = "__modal";
     modal.className = "fixed inset-0 z-50";
 
     modal.innerHTML = `
-      <div class="absolute inset-0 bg-blue-900/80"></div>
+      <div class="absolute inset-0" style="background:#1f2937;opacity:.78;"></div>
       <div class="absolute inset-0 flex items-center justify-center p-4">
-        <div class="card w-full max-w-6xl max-h-[90vh] overflow-auto bg-[#eaf1ff]">
+        <div class="card w-full max-w-6xl max-h-[92vh] overflow-auto bg-slate-50">
           <div class="flex items-center justify-between gap-3 mb-3">
             <h3 class="text-lg font-semibold text-slate-900">${title}</h3>
             <button class="btn btn-ghost" id="btnCloseModal">Fermer</button>
           </div>
           <div id="modalContent"></div>
         </div>
-      </div>`;
+      </div>
+    `;
 
     document.body.appendChild(modal);
-    $("#modalContent").appendChild(contentEl);
+    const c = document.getElementById("modalContent");
+    c.appendChild(contentEl);
 
-    $("#btnCloseModal").onclick = () => modal.remove();
+    document.getElementById("btnCloseModal").onclick = () => modal.remove();
     modal.firstChild.onclick = () => modal.remove();
   }
 
-  // ================== AFFICHAGE PIÈCES ==================
-  function viewPieces(r){
+  // ==========================
+  //   VIEWER PIÈCES JOINTES
+  // ==========================
+  function viewPieces(r) {
     const wrap = document.createElement("div");
 
-    if(r.attachments && r.attachments.length){
-      r.attachments.forEach((a,idx) => {
+    if (r.attachments && r.attachments.length) {
+      r.attachments.forEach((a, idx) => {
         const label = document.createElement("div");
-        label.className = "mb-1 text-sm font-semibold";
+        label.className = "mb-1 text-sm font-semibold text-slate-700";
         label.textContent = `${idx+1}. ${a.name || "Pièce jointe"}`;
         wrap.appendChild(label);
 
         const viewer = document.createElement("div");
-        viewer.className = "mb-4 border rounded-lg overflow-hidden bg-white";
+        viewer.className =
+          "mb-4 border border-slate-200 rounded-xl overflow-hidden bg-white";
 
         const src = a.dataUrl || a.url || "";
 
-        if(a.mime && a.mime.startsWith("image/")){
+        if (a.mime && a.mime.startsWith("image/")) {
           const img = document.createElement("img");
           img.src = src;
           img.className = "w-full h-auto";
           viewer.appendChild(img);
-        } else if((a.mime === "application/pdf") || (a.name || "").toLowerCase().endsWith(".pdf")){
+        } else if (
+          a.mime === "application/pdf" ||
+          (a.name || "").toLowerCase().endsWith(".pdf")
+        ) {
           const emb = document.createElement("embed");
           emb.src = src;
           emb.type = "application/pdf";
           emb.style.width = "100%";
           emb.style.height = "480px";
           viewer.appendChild(emb);
-        } else if(src){
+        } else if (src) {
           const ifr = document.createElement("iframe");
           ifr.src = src;
           ifr.style.width = "100%";
-          ifr.style.height = "400px";
+          ifr.style.height = "420px";
           viewer.appendChild(ifr);
         } else {
           const span = document.createElement("div");
@@ -341,45 +506,62 @@
         wrap.appendChild(viewer);
       });
     } else {
-      wrap.textContent = "Aucune pièce jointe.";
+      const empty = document.createElement("div");
+      empty.className = "text-sm text-slate-500";
+      empty.textContent = "Aucune pièce jointe.";
+      wrap.appendChild(empty);
     }
 
     openModal("Pièces jointes", wrap);
   }
 
-  // ================== FORMULAIRE NOUVEAU / MODIF ==================
-  function openForm(initial){
-    let f = initial ? JSON.parse(JSON.stringify(initial)) : {
-      id: "c" + Date.now(),
-      type: "entrant",
-      numero: "",
-      date: new Date().toISOString().slice(0,10),
-      expediteur: "",
-      destinataire: "",
-      objet: "",
-      instructions: "",
-      service: SERVICES[0],
-      mode: "Courrier",
-      priorite: "Normal",
-      echeance: "",
-      statut: "Reçu",
-      observation: "",
-      reference: "",
-      attachments: []
-    };
+  // ==========================
+  //   FORMULAIRE NOUVEAU / EDIT
+  // ==========================
+  function openForm(initial) {
+    if (!CAN_EDIT) return;
+
+    const f = initial
+      ? JSON.parse(JSON.stringify(initial))
+      : {
+          id: "c" + Date.now(),
+          type: "entrant",
+          numero: "",
+          date: new Date().toISOString().slice(0,10),
+          expediteur: "",
+          destinataire: "",
+          objet: "",
+          instructions: "",
+          service: SERVICES[0],
+          mode: "Courrier",
+          priorite: "Normal",
+          echeance: "",
+          statut: "Reçu",
+          observation: "",
+          reference: "",
+          attachments: []
+        };
 
     const grid = document.createElement("div");
     grid.className = "grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3";
 
-    // Sélecteur type
+    // Bandeau type
     const typeBox = document.createElement("div");
-    typeBox.className = "lg:col-span-4 md:col-span-3 border-2 border-blue-300 bg-blue-50 p-3 rounded-lg";
+    typeBox.className =
+      "lg:col-span-4 md:col-span-3 border-2 border-blue-300 bg-blue-50 p-3 rounded-xl";
     typeBox.innerHTML = `
-      <div class="font-semibold text-blue-800 mb-2">Type de courrier</div>
+      <div class="font-semibold text-blue-900 mb-1 text-sm">
+        Type de courrier
+      </div>
       <div class="flex flex-wrap gap-3">
-        <button type="button" id="btnEntrant" class="btn btn-toggle">Entrant (Arrivée)</button>
-        <button type="button" id="btnSortant" class="btn btn-toggle">Sortant (Départ)</button>
-      </div>`;
+        <button type="button" id="btnEntrant" class="btn btn-toggle">
+          Entrant (Arrivée)
+        </button>
+        <button type="button" id="btnSortant" class="btn btn-toggle">
+          Sortant (Départ)
+        </button>
+      </div>
+    `;
     grid.appendChild(typeBox);
 
     // Champs principaux
@@ -399,7 +581,7 @@
       <div>
         <div class="label" id="lblService">Service destinataire</div>
         <select id="f_service" class="input">
-          ${SERVICES.map(s=>`<option>${s}</option>`).join("")}
+          ${SERVICES.map(s => `<option>${s}</option>`).join("")}
         </select>
       </div>
       <div>
@@ -437,7 +619,7 @@
       </div>
       <div class="lg:col-span-4 md:col-span-3">
         <div class="label">Objet</div>
-        <textarea id="f_objet" class="input input-lg" rows="2"></textarea>
+        <textarea id="f_objet" class="input input-lg" rows="3"></textarea>
       </div>
       <div class="lg:col-span-4 md:col-span-3">
         <div class="label">Instructions</div>
@@ -453,37 +635,49 @@
       </div>
       <div class="lg:col-span-4 md:col-span-3">
         <div class="label">Pièces jointes (PDF / Images)</div>
-        <input id="f_files" type="file" class="input" multiple accept=".pdf,image/*" />
-        <div id="filesList" class="mt-2 flex flex-wrap gap-2 text-xs"></div>
+        <input id="f_files" type="file" class="input" multiple
+               accept=".pdf,image/*" />
+        <div id="filesList"
+             class="mt-2 flex flex-wrap gap-2 text-[10px] text-slate-700"></div>
       </div>
     `;
 
+    // Boutons bas
     const actions = document.createElement("div");
-    actions.className = "lg:col-span-4 md:col-span-3 flex justify-end gap-2 mt-3";
+    actions.className =
+      "lg:col-span-4 md:col-span-3 flex justify-end gap-2 mt-2";
     actions.innerHTML = `
       <button type="button" class="btn" id="btnCancel">Annuler</button>
-      <button type="button" class="btn btn-primary" id="btnSave">Enregistrer</button>`;
+      <button type="button" class="btn btn-primary" id="btnSave">
+        Enregistrer
+      </button>
+    `;
     grid.appendChild(actions);
 
-    function renderFilesList(){
-      const c = $("#filesList",grid);
+    // Sync form
+    function renderFilesList() {
+      const c = $("#filesList", grid);
       c.innerHTML = "";
-      if(!f.attachments) f.attachments = [];
-      f.attachments.forEach((a,idx)=>{
+      if (!f.attachments) f.attachments = [];
+      f.attachments.forEach((a, idx) => {
         const span = document.createElement("span");
-        span.className = "inline-flex items-center gap-1 border px-2 py-1 rounded-full bg-white";
-        span.textContent = a.name || ("Pièce "+(idx+1));
+        span.className =
+          "inline-flex items-center gap-1 border border-slate-200 px-2 py-1 rounded-full bg-white";
+        span.textContent = a.name || ("Pièce " + (idx+1));
         const x = document.createElement("button");
-        x.type="button";
-        x.textContent="×";
-        x.className="text-red-500";
-        x.onclick = ()=>{ f.attachments.splice(idx,1); renderFilesList(); };
+        x.type = "button";
+        x.textContent = "×";
+        x.className = "text-red-500";
+        x.onclick = () => {
+          f.attachments.splice(idx,1);
+          renderFilesList();
+        };
         span.appendChild(x);
         c.appendChild(span);
       });
     }
 
-    function syncToForm(){
+    function syncToForm() {
       $("#f_numero",grid).value = f.numero || "";
       $("#f_date",grid).value = f.date || "";
       $("#f_objet",grid).value = f.objet || "";
@@ -495,20 +689,22 @@
       $("#f_statut",grid).value = f.statut || "Reçu";
       $("#f_reference",grid).value = f.reference || "";
       $("#f_obs",grid).value = f.observation || "";
+
       $("#f_person",grid).value =
         (f.type === "entrant" ? f.expediteur : f.destinataire) || "";
 
-      $("#lblPerson",grid).textContent = f.type === "entrant" ? "Expéditeur" : "Destinataire";
-      $("#lblService",grid).textContent = f.type === "entrant"
-        ? "Service destinataire" : "Service expéditeur";
-      $("#lblMode",grid).textContent = f.type === "entrant"
-        ? "Mode de réception" : "Mode d'envoi";
+      $("#lblPerson",grid).textContent =
+        f.type === "entrant" ? "Expéditeur" : "Destinataire";
+      $("#lblService",grid).textContent =
+        f.type === "entrant" ? "Service destinataire" : "Service expéditeur";
+      $("#lblMode",grid).textContent =
+        f.type === "entrant" ? "Mode de réception" : "Mode d'envoi";
 
       const btnE = $("#btnEntrant",grid);
       const btnS = $("#btnSortant",grid);
       btnE.classList.remove("btn-active","btn-inactive");
       btnS.classList.remove("btn-active","btn-inactive");
-      if(f.type === "entrant"){
+      if (f.type === "entrant") {
         btnE.classList.add("btn-active");
         btnS.classList.add("btn-inactive");
       } else {
@@ -519,48 +715,57 @@
       renderFilesList();
     }
 
-    // Gestion input texte
+    // Écouteurs
     grid.addEventListener("input", e => {
       const id = e.target.id;
-      const v = e.target.value;
-      if(id === "f_numero") f.numero = v;
-      if(id === "f_date") f.date = v;
-      if(id === "f_objet") f.objet = v;
-      if(id === "f_instructions") f.instructions = v;
-      if(id === "f_reference") f.reference = v;
-      if(id === "f_obs") f.observation = v;
-      if(id === "f_person"){
-        if(f.type === "entrant") f.expediteur = v;
+      const v  = e.target.value;
+      if (id === "f_numero") f.numero = v;
+      if (id === "f_date") f.date = v;
+      if (id === "f_objet") f.objet = v;
+      if (id === "f_instructions") f.instructions = v;
+      if (id === "f_reference") f.reference = v;
+      if (id === "f_obs") f.observation = v;
+      if (id === "f_person") {
+        if (f.type === "entrant") f.expediteur = v;
         else f.destinataire = v;
       }
-      if(id === "f_echeance") f.echeance = v;
+      if (id === "f_echeance") f.echeance = v;
     });
 
-    // Selects
     grid.addEventListener("change", e => {
       const id = e.target.id;
-      const v = e.target.value;
-      if(id === "f_service") f.service = v;
-      if(id === "f_mode") f.mode = v;
-      if(id === "f_priorite") f.priorite = v;
-      if(id === "f_statut") f.statut = v;
+      const v  = e.target.value;
+      if (id === "f_service") f.service = v;
+      if (id === "f_mode") f.mode = v;
+      if (id === "f_priorite") f.priorite = v;
+      if (id === "f_statut") f.statut = v;
     });
 
-    // Boutons type
+    // Type
     grid.addEventListener("click", e => {
-      if(e.target.id === "btnEntrant"){ f.type = "entrant"; syncToForm(); }
-      if(e.target.id === "btnSortant"){ f.type = "sortant"; syncToForm(); }
+      if (e.target.id === "btnEntrant") {
+        f.type = "entrant";
+        syncToForm();
+      }
+      if (e.target.id === "btnSortant") {
+        f.type = "sortant";
+        syncToForm();
+      }
     });
 
-    // Upload pièces -> base64 (stockage local)
-    grid.addEventListener("change", e => {
-      if(e.target.id !== "f_files") return;
+    // Upload pièces
+    grid.querySelector("#f_files").addEventListener("change", e => {
       const files = Array.from(e.target.files || []);
-      if(!files.length) return;
+      if (!files.length) return;
+      if (!f.attachments) f.attachments = [];
+
       let i = 0;
-      const readNext = () => {
+      function readNext() {
         const file = files[i++];
-        if(!file){ renderFilesList(); return; }
+        if (!file) {
+          renderFilesList();
+          return;
+        }
         const reader = new FileReader();
         reader.onload = ev => {
           f.attachments.push({
@@ -571,40 +776,29 @@
           readNext();
         };
         reader.readAsDataURL(file);
-      };
+      }
       readNext();
       e.target.value = "";
     });
 
-    // Boutons bas
+    // Boutons
     grid.querySelector("#btnCancel").onclick = () => {
       const m = document.getElementById("__modal");
-      if(m) m.remove();
+      if (m) m.remove();
     };
 
-    grid.querySelector("#btnSave").onclick = async () => {
-      if(!f.objet){
-        alert("Veuillez saisir l'objet du courrier.");
+    grid.querySelector("#btnSave").onclick = () => {
+      if (!f.objet || !f.date) {
+        alert("Merci de saisir au minimum la date et l'objet.");
         return;
       }
-
       const idx = ROWS.findIndex(x => x.id === f.id);
-      if(idx >= 0) ROWS[idx] = f;
+      if (idx >= 0) ROWS[idx] = f;
       else ROWS.unshift(f);
 
       saveLocal();
-
-      // Envoi Firestore si disponible
-      if(window.saveToFirebase){
-        try{
-          await window.saveToFirebase(f);
-        }catch(e){
-          console.error("Erreur enregistrement Firestore", e);
-        }
-      }
-
       const m = document.getElementById("__modal");
-      if(m) m.remove();
+      if (m) m.remove();
       renderAll();
     };
 
@@ -612,94 +806,82 @@
     openModal(initial ? "Modifier le courrier" : "Nouveau courrier", grid);
   }
 
-  // ================== IMPORT JSON ==================
-  function handleImportFile(file){
+  // ==========================
+  //   IMPORT JSON
+  // ==========================
+  function handleImportFile(file) {
     const reader = new FileReader();
     reader.onload = () => {
-      try{
+      try {
         const data = JSON.parse(reader.result);
-        if(!Array.isArray(data)) throw new Error("Le JSON doit contenir un tableau.");
+        if (!Array.isArray(data)) throw new Error("Format attendu : tableau JSON.");
+
         const before = ROWS.length;
         const ids = {};
-        ROWS.forEach(x => ids[x.id] = true);
-        data.forEach((x,i)=>{
-          if(!x || !x.id) x.id = "imp_"+Date.now()+"_"+i;
-          if(!ids[x.id]){ ROWS.push(x); ids[x.id] = true; }
+        ROWS.forEach(x => { ids[x.id] = true; });
+
+        data.forEach((x, i) => {
+          if (!x || typeof x !== "object") return;
+          if (!x.id) x.id = "imp_" + Date.now() + "_" + i;
+          if (!ids[x.id]) {
+            ROWS.push(x);
+            ids[x.id] = true;
+          }
         });
+
         saveLocal();
         renderAll();
-        alert("Import terminé : " + (ROWS.length-before) + " lignes ajoutées.");
-      }catch(err){
-        alert("Erreur lors de la lecture du JSON : " + err.message);
+        alert("Import terminé. " + (ROWS.length - before) + " courriers ajoutés.");
+      } catch (err) {
+        alert("Erreur lors de l'import : " + err.message);
       }
     };
     reader.readAsText(file, "utf-8");
   }
 
-  // ================== BOUTONS GLOBAUX ==================
-  $("#btnNew").onclick = () => openForm(null);
-  $("#btnImport").onclick = () => $("#fileJson").click();
-  $("#fileJson").addEventListener("change", e => {
+  // ==========================
+  //   BOUTONS GLOBAUX
+  // ==========================
+  document.getElementById("btnUser").onclick = () => loginUser();
+
+  document.getElementById("btnNew").onclick = () => {
+    if (CAN_EDIT) openForm(null);
+  };
+
+  document.getElementById("btnImport").onclick = () => {
+    if (!CAN_EDIT) return;
+    document.getElementById("fileJson").click();
+  };
+
+  document.getElementById("fileJson").addEventListener("change", e => {
+    if (!CAN_EDIT) {
+      e.target.value = "";
+      return;
+    }
     const f = e.target.files[0];
-    if(f) handleImportFile(f);
+    if (f) handleImportFile(f);
     e.target.value = "";
   });
-  $("#btnExportPDF").onclick = () => window.print();
-  $("#search").oninput = () => renderAll();
-  $("#filterType").onchange = () => renderAll();
 
-  function renderAll(){
+  document.getElementById("btnExportPDF").onclick = () => {
+    window.print();
+  };
+
+  document.getElementById("search").oninput = renderAll;
+  document.getElementById("filterType").onchange = renderAll;
+
+  function renderAll() {
     renderStats();
     renderTable();
   }
-  renderAll();
-</script>
 
-<!-- ================== FIREBASE (OPTIONNEL) ================== -->
-<script type="module">
-  // Remplace les valeurs ci-dessous par la configuration de ton projet Firebase.
-  // Si tu laisses ces valeurs factices, l'app utilisera uniquement localStorage.
-  const firebaseConfig = {
-    apiKey: "TA_CLE_API_ICI",
-    authDomain: "ton-projet.firebaseapp.com",
-    projectId: "ton-projet",
-    storageBucket: "ton-projet.appspot.com",
-    messagingSenderId: "TON_SENDER_ID",
-    appId: "TON_APP_ID"
-  };
-
-  let appOk = true;
-  for(const k of ["apiKey","projectId","appId"]){
-    if(!firebaseConfig[k] || firebaseConfig.apiKey === "TA_CLE_API_ICI"){
-      appOk = false;
-      break;
-    }
-  }
-
-  if(appOk){
-    import {
-      initializeApp
-    } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
-    import {
-      getFirestore, collection, addDoc
-    } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    console.log("✅ Firebase connecté.");
-
-    window.saveToFirebase = async function(courrier){
-      try{
-        await addDoc(collection(db, "courriers"), courrier);
-        console.log("Courrier enregistré dans Firestore.");
-      }catch(e){
-        console.error("Erreur Firestore :", e);
-      }
-    };
-  } else {
-    console.log("ℹ️ Firebase non configuré, utilisation locale uniquement.");
+  // Au chargement : demander l'utilisateur
+  loginUser();
+  if (!CURRENT_USER) {
+    // Si l'utilisateur ferme les prompts : mode consultation anonyme
+    CURRENT_USER = { name: "consult", canEdit: false };
+    applyRole();
   }
 </script>
-
 </body>
 </html>
