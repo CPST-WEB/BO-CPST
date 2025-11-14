@@ -268,6 +268,7 @@
       userLabel.classList.add("hidden");
     }
 
+    // Boutons réservés aux éditeurs
     document.getElementById("btnNew").style.display    = CAN_EDIT ? "inline-flex" : "none";
     document.getElementById("btnImport").style.display = CAN_EDIT ? "inline-flex" : "none";
     document.getElementById("btnImportPiecesEntrant").style.display = CAN_EDIT ? "inline-flex" : "none";
@@ -416,9 +417,10 @@
       addCell(r.type === "entrant" ? "Entrant" : "Sortant");
       addCell(r.numero || "");
       addCell(r.date || "");
-      addCell(r.type === "entrant"
-        ? (r.expediteur || "-")
-        : (r.destinataire || "-")
+      addCell(
+        r.type === "entrant"
+          ? (r.expediteur || "-")
+          : (r.destinataire || "-")
       );
       addCell(r.objet || "");
       addCell(r.service || "");
@@ -426,6 +428,7 @@
       addCell(r.echeance || "-");
       addCell(r.statut || "");
 
+      // Pièces
       const tdP = document.createElement("td");
       tdP.className = "tbl-td no-print";
       const hasPieces = r.attachments && r.attachments.length;
@@ -442,6 +445,7 @@
       }
       tr.appendChild(tdP);
 
+      // Actions
       const tdA = document.createElement("td");
       tdA.className = "tbl-td no-print";
 
@@ -854,6 +858,7 @@
     const files = Array.from(fileList || []);
     if (!files.length) return;
 
+    // Index courriers par numéro + type
     const mapNumero = {};
     ROWS.forEach((r, idx) => {
       if (expectedType && r.type !== expectedType) return;
@@ -1014,11 +1019,13 @@
     renderTable();
   }
 
+  // Au chargement : demander l'utilisateur
   loginUser();
   if (!CURRENT_USER) {
     CURRENT_USER = { name: "consult", canEdit: false };
     applyRole();
   }
 </script>
+
 </body>
 </html>
