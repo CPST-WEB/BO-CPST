@@ -121,10 +121,15 @@
       <!-- Boutons -->
       <div class="flex flex-wrap gap-2 justify-start md:justify-end items-center">
         <span id="userLabel" class="text-[10px] text-slate-500 mr-1 hidden"></span>
+
         <button class="btn btn-ghost" id="btnUser">Changer d'utilisateur</button>
 
         <input id="fileJson" type="file" accept=".json,application/json" class="hidden" />
+        <input id="filePieces" type="file" accept=".pdf,image/*" class="hidden" multiple />
+
         <button class="btn btn-ghost" id="btnImport">Importer JSON</button>
+        <button class="btn btn-ghost" id="btnImportPiecesEntrant">Pièces arrivées</button>
+        <button class="btn btn-ghost" id="btnImportPiecesSortant">Pièces départs</button>
         <button class="btn btn-ghost" id="btnExportPDF">Exporter PDF</button>
         <button class="btn btn-primary" id="btnNew">Nouveau courrier</button>
       </div>
@@ -134,7 +139,7 @@
   <!-- FILTRES -->
   <section class="card no-print">
     <div class="grid grid-cols-1 md:grid-cols-8 gap-3 items-end">
-      <!-- Recherche texte -->
+      <!-- Recherche -->
       <div class="md:col-span-3">
         <div class="label">Recherche</div>
         <input id="search" class="input" placeholder="Objet, n°, expéditeur, destinataire, référence…" />
@@ -174,7 +179,6 @@
         <input id="filterDate" type="date" class="input" />
       </div>
 
-      <!-- Info -->
       <div class="md:col-span-8 text-[10px] text-right text-slate-500">
         Données stockées localement dans ce navigateur (localStorage).
       </div>
@@ -214,7 +218,6 @@
   // ==========================
   const KEY = "bo_cpst_courrier_v1";
 
-  // Services destinataires / expéditeurs
   const SERVICES = [
     "Secrétariat",
     "Direction des Affaires de la Présidence",
@@ -228,10 +231,9 @@
     "Bureau d'information et Numérisation"
   ];
 
-  // Comptes internes
   const ACCOUNTS = {
-    bo:      { password: "1234", canEdit: true },   // Bureau d'ordre
-    consult: { password: "1234", canEdit: false }   // Consultation
+    bo:      { password: "1234", canEdit: true },
+    consult: { password: "1234", canEdit: false }
   };
 
   let CURRENT_USER = null;
@@ -251,7 +253,7 @@
   }
 
   // ==========================
-  //   GESTION ROLES / LOGIN
+  //   ROLES / LOGIN
   // ==========================
   function applyRole() {
     const userLabel = document.getElementById("userLabel");
@@ -266,11 +268,11 @@
       userLabel.classList.add("hidden");
     }
 
-    // Boutons réservés aux éditeurs
     document.getElementById("btnNew").style.display    = CAN_EDIT ? "inline-flex" : "none";
     document.getElementById("btnImport").style.display = CAN_EDIT ? "inline-flex" : "none";
+    document.getElementById("btnImportPiecesEntrant").style.display = CAN_EDIT ? "inline-flex" : "none";
+    document.getElementById("btnImportPiecesSortant").style.display = CAN_EDIT ? "inline-flex" : "none";
 
-    // Export PDF reste visible pour tous
     renderAll();
   }
 
@@ -303,6 +305,15 @@
     if (diff < 0) return "bg-red-50";
     if (diff <= 3) return "bg-amber-50";
     return "";
+  }
+
+  // Normalise un numéro (01, 001-2025, "N°12" -> "1", "12", etc.)
+  function normalizeNumero(num) {
+    if (!num) return "";
+    const s = String(num);
+    const m = s.match(/(\d+)/);
+    if (!m) return s.trim().toLowerCase();
+    return String(parseInt(m[1], 10));
   }
 
   // ==========================
@@ -344,23 +355,20 @@
     const fText    = ($("#search").value || "").toLowerCase();
     const fType    = ($("#filterType").value || "");
     const fService = ($("#filterService")?.value || "").toLowerCase();
-    const fDate    = ($("#filterDate")?.value || "").trim(); // YYYY-MM-DD ou ""
+    const fDate    = ($("#filterDate")?.value || "").trim();
 
     let rows = ROWS.slice();
 
-    // Filtre type
     if (fType) {
       rows = rows.filter(r => r.type === fType);
     }
 
-    // Filtre service (exact, insensible à la casse)
     if (fService) {
       rows = rows.filter(r =>
         (r.service || "").toLowerCase() === fService
       );
     }
 
-    // Filtre date (égalité stricte sur YYYY-MM-DD)
     if (fDate) {
       rows = rows.filter(r => {
         const d = (r.date || "").slice(0, 10);
@@ -368,7 +376,6 @@
       });
     }
 
-    // Filtre texte global
     if (fText) {
       rows = rows.filter(r => {
         return (
@@ -409,10 +416,9 @@
       addCell(r.type === "entrant" ? "Entrant" : "Sortant");
       addCell(r.numero || "");
       addCell(r.date || "");
-      addCell(
-        r.type === "entrant"
-          ? (r.expediteur || "-")
-          : (r.destinataire || "-")
+      addCell(r.type === "entrant"
+        ? (r.expediteur || "-")
+        : (r.destinataire || "-")
       );
       addCell(r.objet || "");
       addCell(r.service || "");
@@ -420,7 +426,6 @@
       addCell(r.echeance || "-");
       addCell(r.statut || "");
 
-      // Pièces
       const tdP = document.createElement("td");
       tdP.className = "tbl-td no-print";
       const hasPieces = r.attachments && r.attachments.length;
@@ -437,7 +442,6 @@
       }
       tr.appendChild(tdP);
 
-      // Actions
       const tdA = document.createElement("td");
       tdA.className = "tbl-td no-print";
 
@@ -474,7 +478,7 @@
   }
 
   // ==========================
-  //   MODAL GÉNÉRIQUE
+  //   MODAL
   // ==========================
   function openModal(title, contentEl) {
     const old = document.getElementById("__modal");
@@ -506,7 +510,7 @@
   }
 
   // ==========================
-  //   VIEWER PIÈCES JOINTES
+  //   VIEWER PIÈCES
   // ==========================
   function viewPieces(r) {
     const wrap = document.createElement("div");
@@ -565,7 +569,7 @@
   }
 
   // ==========================
-  //   FORMULAIRE NOUVEAU / EDIT
+  //   FORMULAIRE
   // ==========================
   function openForm(initial) {
     if (!CAN_EDIT) return;
@@ -594,7 +598,6 @@
     const grid = document.createElement("div");
     grid.className = "grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3";
 
-    // Bandeau type
     const typeBox = document.createElement("div");
     typeBox.className =
       "lg:col-span-4 md:col-span-3 border-2 border-blue-300 bg-blue-50 p-3 rounded-xl";
@@ -613,7 +616,6 @@
     `;
     grid.appendChild(typeBox);
 
-    // Champs principaux
     grid.innerHTML += `
       <div>
         <div class="label">N° d'enregistrement</div>
@@ -684,26 +686,20 @@
       </div>
       <div class="lg:col-span-4 md:col-span-3">
         <div class="label">Pièces jointes (PDF / Images)</div>
-        <input id="f_files" type="file" class="input" multiple
-               accept=".pdf,image/*" />
-        <div id="filesList"
-             class="mt-2 flex flex-wrap gap-2 text-[10px] text-slate-700"></div>
+        <input id="f_files" type="file" class="input" multiple accept=".pdf,image/*" />
+        <div id="filesList" class="mt-2 flex flex-wrap gap-2 text-[10px] text-slate-700"></div>
       </div>
     `;
 
-    // Boutons bas
     const actions = document.createElement("div");
     actions.className =
       "lg:col-span-4 md:col-span-3 flex justify-end gap-2 mt-2";
     actions.innerHTML = `
       <button type="button" class="btn" id="btnCancel">Annuler</button>
-      <button type="button" class="btn btn-primary" id="btnSave">
-        Enregistrer
-      </button>
+      <button type="button" class="btn btn-primary" id="btnSave">Enregistrer</button>
     `;
     grid.appendChild(actions);
 
-    // Sync form
     function renderFilesList() {
       const c = $("#filesList", grid);
       c.innerHTML = "";
@@ -764,7 +760,6 @@
       renderFilesList();
     }
 
-    // Écouteurs
     grid.addEventListener("input", e => {
       const id = e.target.id;
       const v  = e.target.value;
@@ -790,7 +785,6 @@
       if (id === "f_statut") f.statut = v;
     });
 
-    // Type
     grid.addEventListener("click", e => {
       if (e.target.id === "btnEntrant") {
         f.type = "entrant";
@@ -802,7 +796,6 @@
       }
     });
 
-    // Upload pièces
     grid.querySelector("#f_files").addEventListener("change", e => {
       const files = Array.from(e.target.files || []);
       if (!files.length) return;
@@ -830,7 +823,6 @@
       e.target.value = "";
     });
 
-    // Boutons
     grid.querySelector("#btnCancel").onclick = () => {
       const m = document.getElementById("__modal");
       if (m) m.remove();
@@ -853,6 +845,74 @@
 
     syncToForm();
     openModal(initial ? "Modifier le courrier" : "Nouveau courrier", grid);
+  }
+
+  // ==========================
+  //   IMPORT PIÈCES JOINTES
+  // ==========================
+  function handleImportPieces(fileList, expectedType) {
+    const files = Array.from(fileList || []);
+    if (!files.length) return;
+
+    const mapNumero = {};
+    ROWS.forEach((r, idx) => {
+      if (expectedType && r.type !== expectedType) return;
+      const k = normalizeNumero(r.numero);
+      if (!k) return;
+      if (!mapNumero[k]) mapNumero[k] = [];
+      mapNumero[k].push(idx);
+    });
+
+    let imported = 0;
+    const unmatched = [];
+
+    let i = 0;
+    function readNext() {
+      const file = files[i++];
+      if (!file) {
+        saveLocal();
+        renderAll();
+        let msg = "Import des pièces terminé.\n";
+        msg += imported + " fichier(s) associé(s).\n";
+        if (unmatched.length) {
+          msg += "\nSans correspondance (" + unmatched.length + ") :\n";
+          msg += unmatched.slice(0, 20).join(", ");
+          if (unmatched.length > 20) msg += " ...";
+        }
+        alert(msg);
+        return;
+      }
+
+      const baseName = file.name.replace(/\.[^.]+$/, "");
+      const key = normalizeNumero(baseName);
+      const targets = mapNumero[key];
+
+      if (!targets || !targets.length) {
+        unmatched.push(file.name);
+        return readNext();
+      }
+
+      const reader = new FileReader();
+      reader.onload = ev => {
+        targets.forEach(idx => {
+          if (!ROWS[idx].attachments) ROWS[idx].attachments = [];
+          ROWS[idx].attachments.push({
+            name: file.name,
+            mime: file.type,
+            dataUrl: ev.target.result
+          });
+        });
+        imported++;
+        readNext();
+      };
+      reader.onerror = () => {
+        unmatched.push(file.name + " (erreur lecture)");
+        readNext();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    readNext();
   }
 
   // ==========================
@@ -902,6 +962,18 @@
     document.getElementById("fileJson").click();
   };
 
+  document.getElementById("btnImportPiecesEntrant").onclick = () => {
+    if (!CAN_EDIT) return;
+    window.__currentPiecesType = "entrant";
+    document.getElementById("filePieces").click();
+  };
+
+  document.getElementById("btnImportPiecesSortant").onclick = () => {
+    if (!CAN_EDIT) return;
+    window.__currentPiecesType = "sortant";
+    document.getElementById("filePieces").click();
+  };
+
   document.getElementById("fileJson").addEventListener("change", e => {
     if (!CAN_EDIT) {
       e.target.value = "";
@@ -912,16 +984,28 @@
     e.target.value = "";
   });
 
+  document.getElementById("filePieces").addEventListener("change", e => {
+    if (!CAN_EDIT) {
+      e.target.value = "";
+      return;
+    }
+    const files = e.target.files;
+    const expectedType = window.__currentPiecesType || null;
+    if (files && files.length) {
+      handleImportPieces(files, expectedType);
+    }
+    e.target.value = "";
+    window.__currentPiecesType = null;
+  });
+
   document.getElementById("btnExportPDF").onclick = () => {
     window.print();
   };
 
   document.getElementById("search").oninput = renderAll;
   document.getElementById("filterType").onchange = renderAll;
-
   const fs = document.getElementById("filterService");
   if (fs) fs.onchange = renderAll;
-
   const fd = document.getElementById("filterDate");
   if (fd) fd.onchange = renderAll;
 
@@ -930,10 +1014,8 @@
     renderTable();
   }
 
-  // Au chargement : demander l'utilisateur
   loginUser();
   if (!CURRENT_USER) {
-    // Si l'utilisateur ferme les prompts : mode consultation anonyme
     CURRENT_USER = { name: "consult", canEdit: false };
     applyRole();
   }
