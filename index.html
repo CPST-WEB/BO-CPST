@@ -133,11 +133,14 @@
 
   <!-- FILTRES -->
   <section class="card no-print">
-    <div class="grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
+    <div class="grid grid-cols-1 md:grid-cols-8 gap-3 items-end">
+      <!-- Recherche texte -->
       <div class="md:col-span-3">
         <div class="label">Recherche</div>
         <input id="search" class="input" placeholder="Objet, n°, expéditeur, destinataire, référence…" />
       </div>
+
+      <!-- Type -->
       <div class="md:col-span-2">
         <div class="label">Type</div>
         <select id="filterType" class="input">
@@ -146,7 +149,33 @@
           <option value="sortant">Sortant</option>
         </select>
       </div>
-      <div class="md:col-span-1 text-[10px] text-right text-slate-500">
+
+      <!-- Service -->
+      <div class="md:col-span-2">
+        <div class="label">Service</div>
+        <select id="filterService" class="input">
+          <option value="">Tous</option>
+          <option value="secrétariat">Secrétariat</option>
+          <option value="direction des affaires de la présidence">Direction des Affaires de la Présidence</option>
+          <option value="direction générale des services">Direction Générale des Services</option>
+          <option value="service mutualisation coopération et société civile">Service Mutualisation Coopération et Société Civile</option>
+          <option value="service gestion des ressources humaines et affaires juridiques">Service Gestion des Ressources humaines et Affaires Juridiques</option>
+          <option value="service des affaires financières et patrimoine">Service Des Affaires Financières et Patrimoine</option>
+          <option value="service des affaires techniques et développement et des équipements">Service des Affaires Techniques et Développement et des Équipements</option>
+          <option value="bureau de gestion du parc">Bureau de Gestion du Parc</option>
+          <option value="bureau de gestion des archives">Bureau de Gestion des Archives</option>
+          <option value="bureau d'information et numérisation">Bureau d'information et Numérisation</option>
+        </select>
+      </div>
+
+      <!-- Date -->
+      <div class="md:col-span-1">
+        <div class="label">Date</div>
+        <input id="filterDate" type="date" class="input" />
+      </div>
+
+      <!-- Info -->
+      <div class="md:col-span-8 text-[10px] text-right text-slate-500">
         Données stockées localement dans ce navigateur (localStorage).
       </div>
     </div>
@@ -311,16 +340,35 @@
   //   TABLEAU
   // ==========================
   function renderTable() {
-    const tb = $("#tbody");
-    const fText = ($("#search").value || "").toLowerCase();
-    const fType = $("#filterType").value || "";
+    const tb       = $("#tbody");
+    const fText    = ($("#search").value || "").toLowerCase();
+    const fType    = ($("#filterType").value || "");
+    const fService = ($("#filterService")?.value || "").toLowerCase();
+    const fDate    = ($("#filterDate")?.value || "").trim(); // YYYY-MM-DD ou ""
 
     let rows = ROWS.slice();
 
+    // Filtre type
     if (fType) {
       rows = rows.filter(r => r.type === fType);
     }
 
+    // Filtre service (exact, insensible à la casse)
+    if (fService) {
+      rows = rows.filter(r =>
+        (r.service || "").toLowerCase() === fService
+      );
+    }
+
+    // Filtre date (égalité stricte sur YYYY-MM-DD)
+    if (fDate) {
+      rows = rows.filter(r => {
+        const d = (r.date || "").slice(0, 10);
+        return d === fDate;
+      });
+    }
+
+    // Filtre texte global
     if (fText) {
       rows = rows.filter(r => {
         return (
@@ -328,7 +376,8 @@
           (r.numero || "").toLowerCase().includes(fText) ||
           (r.expediteur || "").toLowerCase().includes(fText) ||
           (r.destinataire || "").toLowerCase().includes(fText) ||
-          (r.reference || "").toLowerCase().includes(fText)
+          (r.reference || "").toLowerCase().includes(fText) ||
+          (r.service || "").toLowerCase().includes(fText)
         );
       });
     }
@@ -869,6 +918,12 @@
 
   document.getElementById("search").oninput = renderAll;
   document.getElementById("filterType").onchange = renderAll;
+
+  const fs = document.getElementById("filterService");
+  if (fs) fs.onchange = renderAll;
+
+  const fd = document.getElementById("filterDate");
+  if (fd) fd.onchange = renderAll;
 
   function renderAll() {
     renderStats();
