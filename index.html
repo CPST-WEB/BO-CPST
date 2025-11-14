@@ -115,21 +115,21 @@
           <div class="text-lg md:text-xl font-bold text-slate-900">
             Bureau d'Ordre — Gestion du Courrier
           </div>
+          <span id="userLabel" class="text-[10px] text-slate-500 mt-1 hidden"></span>
         </div>
       </div>
 
       <!-- Boutons -->
       <div class="flex flex-wrap gap-2 justify-start md:justify-end items-center">
-        <span id="userLabel" class="text-[10px] text-slate-500 mr-1 hidden"></span>
-
         <button class="btn btn-ghost" id="btnUser">Changer d'utilisateur</button>
 
         <input id="fileJson" type="file" accept=".json,application/json" class="hidden" />
-        <input id="filePieces" type="file" accept=".pdf,image/*" class="hidden" multiple />
-
         <button class="btn btn-ghost" id="btnImport">Importer JSON</button>
+
+        <input id="filePieces" type="file" accept=".pdf,image/*" class="hidden" multiple />
         <button class="btn btn-ghost" id="btnImportPiecesEntrant">Pièces arrivées</button>
         <button class="btn btn-ghost" id="btnImportPiecesSortant">Pièces départs</button>
+
         <button class="btn btn-ghost" id="btnExportPDF">Exporter PDF</button>
         <button class="btn btn-primary" id="btnNew">Nouveau courrier</button>
       </div>
@@ -139,13 +139,10 @@
   <!-- FILTRES -->
   <section class="card no-print">
     <div class="grid grid-cols-1 md:grid-cols-8 gap-3 items-end">
-      <!-- Recherche -->
       <div class="md:col-span-3">
         <div class="label">Recherche</div>
         <input id="search" class="input" placeholder="Objet, n°, expéditeur, destinataire, référence…" />
       </div>
-
-      <!-- Type -->
       <div class="md:col-span-2">
         <div class="label">Type</div>
         <select id="filterType" class="input">
@@ -154,31 +151,26 @@
           <option value="sortant">Sortant</option>
         </select>
       </div>
-
-      <!-- Service -->
       <div class="md:col-span-2">
         <div class="label">Service</div>
         <select id="filterService" class="input">
           <option value="">Tous</option>
-          <option value="secrétariat">Secrétariat</option>
-          <option value="direction des affaires de la présidence">Direction des Affaires de la Présidence</option>
-          <option value="direction générale des services">Direction Générale des Services</option>
-          <option value="service mutualisation coopération et société civile">Service Mutualisation Coopération et Société Civile</option>
-          <option value="service gestion des ressources humaines et affaires juridiques">Service Gestion des Ressources humaines et Affaires Juridiques</option>
-          <option value="service des affaires financières et patrimoine">Service Des Affaires Financières et Patrimoine</option>
-          <option value="service des affaires techniques et développement et des équipements">Service des Affaires Techniques et Développement et des Équipements</option>
-          <option value="bureau de gestion du parc">Bureau de Gestion du Parc</option>
-          <option value="bureau de gestion des archives">Bureau de Gestion des Archives</option>
-          <option value="bureau d'information et numérisation">Bureau d'information et Numérisation</option>
+          <option>Secrétariat</option>
+          <option>Direction des Affaires de la Présidence</option>
+          <option>Direction Générale des Services</option>
+          <option>Service Mutualisation Coopération et Société Civile</option>
+          <option>Service Gestion des Ressources humaines et Affaires Juridiques</option>
+          <option>Service Des Affaires Financières et Patrimoine</option>
+          <option>Service des Affaires Techniques et Développement et des Équipements</option>
+          <option>Bureau de Gestion du Parc</option>
+          <option>Bureau de Gestion des Archives</option>
+          <option>Bureau d'information et Numérisation</option>
         </select>
       </div>
-
-      <!-- Date -->
       <div class="md:col-span-1">
         <div class="label">Date</div>
         <input id="filterDate" type="date" class="input" />
       </div>
-
       <div class="md:col-span-8 text-[10px] text-right text-slate-500">
         Données stockées localement dans ce navigateur (localStorage).
       </div>
@@ -268,7 +260,6 @@
       userLabel.classList.add("hidden");
     }
 
-    // Boutons réservés aux éditeurs
     document.getElementById("btnNew").style.display    = CAN_EDIT ? "inline-flex" : "none";
     document.getElementById("btnImport").style.display = CAN_EDIT ? "inline-flex" : "none";
     document.getElementById("btnImportPiecesEntrant").style.display = CAN_EDIT ? "inline-flex" : "none";
@@ -308,7 +299,7 @@
     return "";
   }
 
-  // Normalise un numéro (01, 001-2025, "N°12" -> "1", "12", etc.)
+  // Normalise un numéro (01, "N°12/2025" -> "1" ou "12")
   function normalizeNumero(num) {
     if (!num) return "";
     const s = String(num);
@@ -323,8 +314,8 @@
   function renderStats() {
     const r = ROWS;
     const total = r.length;
-    const entrants = r.filter(x => x.type === "entrant").length;
-    const sortants = r.filter(x => x.type === "sortant").length;
+    const entrants = r.filter(x => (x.type || "").toLowerCase() === "entrant").length;
+    const sortants = r.filter(x => (x.type || "").toLowerCase() === "sortant").length;
     const enTrait = r.filter(x => x.statut === "En traitement").length;
     const urg = r.filter(x => x.priorite && x.priorite !== "Normal").length;
     const late = r.filter(x =>
@@ -361,7 +352,7 @@
     let rows = ROWS.slice();
 
     if (fType) {
-      rows = rows.filter(r => r.type === fType);
+      rows = rows.filter(r => (r.type || "").toLowerCase() === fType);
     }
 
     if (fService) {
@@ -414,11 +405,13 @@
         tr.appendChild(td);
       }
 
-      addCell(r.type === "entrant" ? "Entrant" : "Sortant");
+      const ttype = (r.type || "").toLowerCase() === "entrant" ? "Entrant" : "Sortant";
+
+      addCell(ttype);
       addCell(r.numero || "");
       addCell(r.date || "");
       addCell(
-        r.type === "entrant"
+        (r.type || "").toLowerCase() === "entrant"
           ? (r.expediteur || "-")
           : (r.destinataire || "-")
       );
@@ -431,7 +424,7 @@
       // Pièces
       const tdP = document.createElement("td");
       tdP.className = "tbl-td no-print";
-      const hasPieces = r.attachments && r.attachments.length;
+      const hasPieces = Array.isArray(r.attachments) && r.attachments.length > 0;
       if (hasPieces) {
         const a = document.createElement("a");
         a.href = "#";
@@ -519,7 +512,7 @@
   function viewPieces(r) {
     const wrap = document.createElement("div");
 
-    if (r.attachments && r.attachments.length) {
+    if (Array.isArray(r.attachments) && r.attachments.length) {
       r.attachments.forEach((a, idx) => {
         const label = document.createElement("div");
         label.className = "mb-1 text-sm font-semibold text-slate-700";
@@ -598,6 +591,8 @@
           reference: "",
           attachments: []
         };
+
+    if (!Array.isArray(f.attachments)) f.attachments = [];
 
     const grid = document.createElement("div");
     grid.className = "grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3";
@@ -707,7 +702,6 @@
     function renderFilesList() {
       const c = $("#filesList", grid);
       c.innerHTML = "";
-      if (!f.attachments) f.attachments = [];
       f.attachments.forEach((a, idx) => {
         const span = document.createElement("span");
         span.className =
@@ -740,25 +734,26 @@
       $("#f_obs",grid).value = f.observation || "";
 
       $("#f_person",grid).value =
-        (f.type === "entrant" ? f.expediteur : f.destinataire) || "";
+        ( (f.type || "").toLowerCase() === "entrant" ? f.expediteur : f.destinataire ) || "";
 
       $("#lblPerson",grid).textContent =
-        f.type === "entrant" ? "Expéditeur" : "Destinataire";
+        (f.type || "").toLowerCase() === "entrant" ? "Expéditeur" : "Destinataire";
       $("#lblService",grid).textContent =
-        f.type === "entrant" ? "Service destinataire" : "Service expéditeur";
+        (f.type || "").toLowerCase() === "entrant" ? "Service destinataire" : "Service expéditeur";
       $("#lblMode",grid).textContent =
-        f.type === "entrant" ? "Mode de réception" : "Mode d'envoi";
+        (f.type || "").toLowerCase() === "entrant" ? "Mode de réception" : "Mode d'envoi";
 
       const btnE = $("#btnEntrant",grid);
       const btnS = $("#btnSortant",grid);
       btnE.classList.remove("btn-active","btn-inactive");
       btnS.classList.remove("btn-active","btn-inactive");
-      if (f.type === "entrant") {
-        btnE.classList.add("btn-active");
-        btnS.classList.add("btn-inactive");
-      } else {
+      if ((f.type || "").toLowerCase() === "sortant") {
         btnS.classList.add("btn-active");
         btnE.classList.add("btn-inactive");
+      } else {
+        btnE.classList.add("btn-active");
+        btnS.classList.add("btn-inactive");
+        f.type = "entrant";
       }
 
       renderFilesList();
@@ -774,7 +769,7 @@
       if (id === "f_reference") f.reference = v;
       if (id === "f_obs") f.observation = v;
       if (id === "f_person") {
-        if (f.type === "entrant") f.expediteur = v;
+        if ((f.type || "").toLowerCase() === "entrant") f.expediteur = v;
         else f.destinataire = v;
       }
       if (id === "f_echeance") f.echeance = v;
@@ -803,7 +798,6 @@
     grid.querySelector("#f_files").addEventListener("change", e => {
       const files = Array.from(e.target.files || []);
       if (!files.length) return;
-      if (!f.attachments) f.attachments = [];
 
       let i = 0;
       function readNext() {
@@ -858,10 +852,10 @@
     const files = Array.from(fileList || []);
     if (!files.length) return;
 
-    // Index courriers par numéro + type
     const mapNumero = {};
     ROWS.forEach((r, idx) => {
-      if (expectedType && r.type !== expectedType) return;
+      const t = String(r.type || "").toLowerCase();
+      if (expectedType && t !== expectedType) return;
       const k = normalizeNumero(r.numero);
       if (!k) return;
       if (!mapNumero[k]) mapNumero[k] = [];
@@ -900,7 +894,7 @@
       const reader = new FileReader();
       reader.onload = ev => {
         targets.forEach(idx => {
-          if (!ROWS[idx].attachments) ROWS[idx].attachments = [];
+          if (!Array.isArray(ROWS[idx].attachments)) ROWS[idx].attachments = [];
           ROWS[idx].attachments.push({
             name: file.name,
             mime: file.type,
@@ -938,6 +932,7 @@
           if (!x || typeof x !== "object") return;
           if (!x.id) x.id = "imp_" + Date.now() + "_" + i;
           if (!ids[x.id]) {
+            if (!Array.isArray(x.attachments)) x.attachments = [];
             ROWS.push(x);
             ids[x.id] = true;
           }
@@ -1009,10 +1004,8 @@
 
   document.getElementById("search").oninput = renderAll;
   document.getElementById("filterType").onchange = renderAll;
-  const fs = document.getElementById("filterService");
-  if (fs) fs.onchange = renderAll;
-  const fd = document.getElementById("filterDate");
-  if (fd) fd.onchange = renderAll;
+  document.getElementById("filterService").onchange = renderAll;
+  document.getElementById("filterDate").onchange = renderAll;
 
   function renderAll() {
     renderStats();
@@ -1026,6 +1019,5 @@
     applyRole();
   }
 </script>
-
 </body>
 </html>
