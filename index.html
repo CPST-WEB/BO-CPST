@@ -4,8 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Bureau d'Ordre — Gestion du Courrier</title>
+
+  <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <style>
     .card {
       border-radius: 16px;
@@ -116,22 +121,29 @@
           <div class="text-lg md:text-xl font-bold text-slate-900">
             Bureau d'Ordre — Gestion du Courrier
           </div>
-          <span id="userLabel" class="text-[10px] text-slate-500 mt-1 hidden"></span>
         </div>
       </div>
 
       <!-- Boutons -->
       <div class="flex flex-wrap gap-2 justify-start md:justify-end items-center">
+        <span id="userLabel" class="text-[10px] text-slate-500 mr-1 hidden"></span>
+
         <button class="btn btn-ghost" id="btnUser">Changer d'utilisateur</button>
 
+        <!-- Import JSON -->
         <input id="fileJson" type="file" accept=".json,application/json" class="hidden" />
         <button class="btn btn-ghost" id="btnImport">Importer JSON</button>
 
-        <input id="filePieces" type="file" accept=".pdf,image/*" class="hidden" multiple />
-        <button class="btn btn-ghost" id="btnImportPiecesEntrant">Pièces arrivées</button>
-        <button class="btn btn-ghost" id="btnImportPiecesSortant">Pièces départs</button>
+        <!-- Import pièces -->
+        <input id="filePiecesArrivees" type="file" accept=".pdf" multiple class="hidden" />
+        <input id="filePiecesDeparts" type="file" accept=".pdf" multiple class="hidden" />
+        <button class="btn btn-ghost" id="btnPiecesArrivees">Pièces arrivées</button>
+        <button class="btn btn-ghost" id="btnPiecesDeparts">Pièces départs</button>
 
+        <!-- Export PDF -->
         <button class="btn btn-ghost" id="btnExportPDF">Exporter PDF</button>
+
+        <!-- Nouveau -->
         <button class="btn btn-primary" id="btnNew">Nouveau courrier</button>
       </div>
     </div>
@@ -139,12 +151,12 @@
 
   <!-- FILTRES -->
   <section class="card no-print">
-    <div class="grid grid-cols-1 md:grid-cols-8 gap-3 items-end">
+    <div class="grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
       <div class="md:col-span-3">
         <div class="label">Recherche</div>
         <input id="search" class="input" placeholder="Objet, n°, expéditeur, destinataire, référence…" />
       </div>
-      <div class="md:col-span-2">
+      <div>
         <div class="label">Type</div>
         <select id="filterType" class="input">
           <option value="">Tous</option>
@@ -152,28 +164,18 @@
           <option value="sortant">Sortant</option>
         </select>
       </div>
-      <div class="md:col-span-2">
+      <div>
         <div class="label">Service</div>
         <select id="filterService" class="input">
           <option value="">Tous</option>
-          <option>Secrétariat</option>
-          <option>Direction des Affaires de la Présidence</option>
-          <option>Direction Générale des Services</option>
-          <option>Service Mutualisation Coopération et Société Civile</option>
-          <option>Service Gestion des Ressources humaines et Affaires Juridiques</option>
-          <option>Service Des Affaires Financières et Patrimoine</option>
-          <option>Service des Affaires Techniques et Développement et des Équipements</option>
-          <option>Bureau de Gestion du Parc</option>
-          <option>Bureau de Gestion des Archives</option>
-          <option>Bureau d'information et Numérisation</option>
         </select>
       </div>
-      <div class="md:col-span-1">
+      <div>
         <div class="label">Date</div>
         <input id="filterDate" type="date" class="input" />
       </div>
-      <div class="md:col-span-8 text-[10px] text-right text-slate-500">
-        Données stockées localement dans ce navigateur (localStorage).
+      <div class="md:col-span-1 text-[10px] text-right text-slate-500">
+        Données stockées dans Supabase (cloud).
       </div>
     </div>
   </section>
@@ -207,10 +209,23 @@
 
 <script>
   // ==========================
-  //   CONFIG & DONNÉES
+  //   CONFIG SUPABASE
+  // ==========================
+  const SUPABASE_URL = "https://ton-projet.supabase.co";      // TODO: à remplacer
+  const SUPABASE_ANON_KEY = "ta_cle_anon";                    // TODO: à remplacer
+
+  // Nom des buckets de pièces jointes
+  const BUCKET_ARRIVEES = "pieces_arrivees";                  // TODO: adapter si besoin
+  const BUCKET_DEPARTS  = "pieces_departs";                   // TODO: adapter si besoin
+
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // ==========================
+  //   CONFIG & CONSTANTES
   // ==========================
   const KEY = "bo_cpst_courrier_v1";
 
+  // Services
   const SERVICES = [
     "Secrétariat",
     "Direction des Affaires de la Présidence",
@@ -219,14 +234,20 @@
     "Service Gestion des Ressources humaines et Affaires Juridiques",
     "Service Des Affaires Financières et Patrimoine",
     "Service des Affaires Techniques et Développement et des Équipements",
+    "DGS",
+    "SMCSC",
+    "SRHAJ",
+    "SAFP",
+    "DAPC",
     "Bureau de Gestion du Parc",
     "Bureau de Gestion des Archives",
     "Bureau d'information et Numérisation"
   ];
 
+  // Comptes internes
   const ACCOUNTS = {
-    bo:      { password: "1234", canEdit: true },
-    consult: { password: "1234", canEdit: false }
+    bo:      { password: "1234", canEdit: true },   // Bureau d'ordre
+    consult: { password: "1234", canEdit: false }   // Consultation
   };
 
   let CURRENT_USER = null;
@@ -234,16 +255,8 @@
 
   function $(sel, parent){ return (parent || document).querySelector(sel); }
 
-  let ROWS = [];
-  try {
-    ROWS = JSON.parse(localStorage.getItem(KEY) || "[]") || [];
-  } catch(e) {
-    ROWS = [];
-  }
-
-  function saveLocal() {
-    localStorage.setItem(KEY, JSON.stringify(ROWS));
-  }
+  // Données en mémoire
+  let ROWS = []; // courriers
 
   // ==========================
   //   ROLES / LOGIN
@@ -263,8 +276,8 @@
 
     document.getElementById("btnNew").style.display    = CAN_EDIT ? "inline-flex" : "none";
     document.getElementById("btnImport").style.display = CAN_EDIT ? "inline-flex" : "none";
-    document.getElementById("btnImportPiecesEntrant").style.display = CAN_EDIT ? "inline-flex" : "none";
-    document.getElementById("btnImportPiecesSortant").style.display = CAN_EDIT ? "inline-flex" : "none";
+    document.getElementById("btnPiecesArrivees").style.display = CAN_EDIT ? "inline-flex" : "none";
+    document.getElementById("btnPiecesDeparts").style.display  = CAN_EDIT ? "inline-flex" : "none";
 
     renderAll();
   }
@@ -287,6 +300,264 @@
   }
 
   // ==========================
+  //   SUPABASE : COURRIERS
+  // ==========================
+  async function loadRowsFromSupabase() {
+    // 1) Courriers
+    const { data, error } = await supabaseClient
+      .from("courriers")
+      .select("*")
+      .order("date", { ascending: true });
+
+    if (error) {
+      console.error("Erreur chargement Supabase :", error);
+      alert("Erreur lors du chargement des courriers depuis Supabase.");
+      ROWS = [];
+    } else {
+      ROWS = (data || []).map(row => ({
+        id: row.id,
+        type: row.type,
+        numero: row.numero || "",
+        date: row.date || "",
+        expediteur: row.expediteur || "",
+        destinataire: row.destinataire || "",
+        objet: row.objet || "",
+        service: row.service || "",
+        priorite: row.priorite || "",
+        echeance: row.echeance || "",
+        statut: row.statut || "",
+        instructions: row.instructions || "",
+        observation: row.observation || "",
+        reference: row.reference || "",
+        hasAttachments: false
+      }));
+    }
+
+    // 2) Attachements (juste pour savoir s'il y en a)
+    const { data: att, error: attErr } = await supabaseClient
+      .from("attachments")
+      .select("courrier_id");
+
+    if (!attErr && att) {
+      const map = {};
+      att.forEach(a => { map[a.courrier_id] = true; });
+      ROWS.forEach(r => { r.hasAttachments = !!map[r.id]; });
+    }
+
+    // Mise à jour de la liste des services dans le filtre
+    const serviceSet = new Set(SERVICES);
+    ROWS.forEach(r => {
+      if (r.service) serviceSet.add(r.service);
+    });
+    const selectService = document.getElementById("filterService");
+    selectService.innerHTML = '<option value="">Tous</option>';
+    Array.from(serviceSet).sort().forEach(s => {
+      const opt = document.createElement("option");
+      opt.value = s;
+      opt.textContent = s;
+      selectService.appendChild(opt);
+    });
+
+    renderAll();
+  }
+
+  async function upsertCourrierInSupabase(row) {
+    const payload = {
+      id: row.id || null,
+      type: row.type,
+      numero: row.numero || "",
+      date: row.date || null,
+      expediteur: row.expediteur || "",
+      destinataire: row.destinataire || "",
+      objet: row.objet || "",
+      service: row.service || "",
+      priorite: row.priorite || "",
+      echeance: row.echeance || null,
+      statut: row.statut || "",
+      instructions: row.instructions || "",
+      observation: row.observation || "",
+      reference: row.reference || ""
+    };
+
+    const { data, error } = await supabaseClient
+      .from("courriers")
+      .upsert(payload, { onConflict: "id" })
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Erreur sauvegarde Supabase :", error);
+      alert("Erreur lors de la sauvegarde du courrier dans Supabase.");
+      return null;
+    }
+    return data;
+  }
+
+  async function deleteCourrierInSupabase(id) {
+    // Supprimer les pièces jointes d'abord (sinon erreur de clé étrangère)
+    await supabaseClient.from("attachments").delete().eq("courrier_id", id);
+    const { error } = await supabaseClient
+      .from("courriers")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.error("Erreur suppression Supabase :", error);
+      alert("Erreur lors de la suppression du courrier dans Supabase.");
+    }
+  }
+
+  // ==========================
+  //   SUPABASE : ATTACHMENTS
+  // ==========================
+  async function loadAttachmentsForCourrier(courrierId) {
+    if (!courrierId) return [];
+    const { data, error } = await supabaseClient
+      .from("attachments")
+      .select("*")
+      .eq("courrier_id", courrierId);
+
+    if (error) {
+      console.error("Erreur chargement pièces :", error);
+      return [];
+    }
+    return (data || []).map(a => ({
+      id: a.id,
+      name: a.file_name,
+      bucket: a.bucket,
+      path: a.path,
+      type: a.type
+    }));
+  }
+
+  async function uploadAttachmentAndSave(courrier, file) {
+    if (!courrier.id) {
+      alert("Enregistrez d'abord le courrier, puis rouvrez-le pour ajouter des pièces jointes.");
+      return null;
+    }
+
+    const type = courrier.type === "sortant" ? "sortant" : "entrant";
+    const bucket = type === "entrant" ? BUCKET_ARRIVEES : BUCKET_DEPARTS;
+    const numero = (courrier.numero || "sans_num").toString().trim() || "sans_num";
+    const safeName = file.name.replace(/\s+/g, "_");
+    const path = `${numero}_${Date.now()}_${safeName}`;
+
+    const { error: upErr } = await supabaseClient
+      .storage
+      .from(bucket)
+      .upload(path, file, { upsert: true });
+
+    if (upErr) {
+      console.error("Erreur upload fichier :", upErr);
+      alert("Erreur lors du téléversement de la pièce jointe.");
+      return null;
+    }
+
+    const { data, error } = await supabaseClient
+      .from("attachments")
+      .insert({
+        courrier_id: courrier.id,
+        type,
+        file_name: file.name,
+        bucket,
+        path
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Erreur enregistrement pièce :", error);
+      alert("Erreur lors de l'enregistrement de la pièce jointe.");
+      return null;
+    }
+
+    return {
+      id: data.id,
+      name: data.file_name,
+      bucket: data.bucket,
+      path: data.path,
+      type: data.type
+    };
+  }
+
+  async function getPublicUrl(bucket, path) {
+    const { data } = supabaseClient.storage.from(bucket).getPublicUrl(path);
+    return data.publicUrl;
+  }
+
+  // Import massif de pièces (arrivées / départs)
+  async function importPiecesFromFiles(files, type) {
+    if (!files || !files.length) return;
+
+    const isEntrant = type === "entrant";
+    const bucket = isEntrant ? BUCKET_ARRIVEES : BUCKET_DEPARTS;
+
+    const mapCourrier = {};
+    ROWS.forEach(r => {
+      const key = r.type + "|" + (r.numero || "").toString().trim();
+      if (r.id) mapCourrier[key] = r.id;
+    });
+
+    const skipped = [];
+
+    for (const file of files) {
+      const m = file.name.match(/(\d+)/);
+      if (!m) {
+        skipped.push(file.name);
+        continue;
+      }
+      const numero = m[1];
+      const key = type + "|" + numero;
+      const courrierId = mapCourrier[key];
+      if (!courrierId) {
+        skipped.push(file.name);
+        continue;
+      }
+
+      const safeName = file.name.replace(/\s+/g, "_");
+      const path = `${numero}_${Date.now()}_${safeName}`;
+
+      const { error: upErr } = await supabaseClient
+        .storage
+        .from(bucket)
+        .upload(path, file, { upsert: true });
+
+      if (upErr) {
+        console.error("Erreur upload pour", file.name, upErr);
+        skipped.push(file.name);
+        continue;
+      }
+
+      const { error: insErr } = await supabaseClient
+        .from("attachments")
+        .insert({
+          courrier_id: courrierId,
+          type,
+          file_name: file.name,
+          bucket,
+          path
+        });
+
+      if (insErr) {
+        console.error("Erreur insert attachment pour", file.name, insErr);
+        skipped.push(file.name);
+        continue;
+      }
+    }
+
+    if (skipped.length) {
+      alert(
+        "Import terminé, mais certaines pièces n'ont pas été reliées (numéro introuvable) :\n\n" +
+        skipped.join("\n")
+      );
+    } else {
+      alert("Import des pièces terminé avec succès.");
+    }
+
+    await loadRowsFromSupabase();
+  }
+
+  // ==========================
   //   OUTILS
   // ==========================
   function dangerDate(echeance) {
@@ -300,13 +571,8 @@
     return "";
   }
 
-  // Normalise un numéro (01, "N°12/2025" -> "1" ou "12")
-  function normalizeNumero(num) {
-    if (!num) return "";
-    const s = String(num);
-    const m = s.match(/(\d+)/);
-    if (!m) return s.trim().toLowerCase();
-    return String(parseInt(m[1], 10));
+  function saveLocal() {
+    // plus utilisé (on garde la fonction pour compatibilité)
   }
 
   // ==========================
@@ -315,8 +581,8 @@
   function renderStats() {
     const r = ROWS;
     const total = r.length;
-    const entrants = r.filter(x => (x.type || "").toLowerCase() === "entrant").length;
-    const sortants = r.filter(x => (x.type || "").toLowerCase() === "sortant").length;
+    const entrants = r.filter(x => x.type === "entrant").length;
+    const sortants = r.filter(x => x.type === "sortant").length;
     const enTrait = r.filter(x => x.statut === "En traitement").length;
     const urg = r.filter(x => x.priorite && x.priorite !== "Normal").length;
     const late = r.filter(x =>
@@ -344,30 +610,17 @@
   //   TABLEAU
   // ==========================
   function renderTable() {
-    const tb       = $("#tbody");
-    const fText    = ($("#search").value || "").toLowerCase();
-    const fType    = ($("#filterType").value || "");
-    const fService = ($("#filterService")?.value || "").toLowerCase();
-    const fDate    = ($("#filterDate")?.value || "").trim();
+    const tb = $("#tbody");
+    const fText = ($("#search").value || "").toLowerCase();
+    const fType = $("#filterType").value || "";
+    const fService = $("#filterService").value || "";
+    const fDate = $("#filterDate").value || "";
 
     let rows = ROWS.slice();
 
-    if (fType) {
-      rows = rows.filter(r => (r.type || "").toLowerCase() === fType);
-    }
-
-    if (fService) {
-      rows = rows.filter(r =>
-        (r.service || "").toLowerCase() === fService
-      );
-    }
-
-    if (fDate) {
-      rows = rows.filter(r => {
-        const d = (r.date || "").slice(0, 10);
-        return d === fDate;
-      });
-    }
+    if (fType) rows = rows.filter(r => r.type === fType);
+    if (fService) rows = rows.filter(r => r.service === fService);
+    if (fDate) rows = rows.filter(r => r.date === fDate);
 
     if (fText) {
       rows = rows.filter(r => {
@@ -376,8 +629,7 @@
           (r.numero || "").toLowerCase().includes(fText) ||
           (r.expediteur || "").toLowerCase().includes(fText) ||
           (r.destinataire || "").toLowerCase().includes(fText) ||
-          (r.reference || "").toLowerCase().includes(fText) ||
-          (r.service || "").toLowerCase().includes(fText)
+          (r.reference || "").toLowerCase().includes(fText)
         );
       });
     }
@@ -406,13 +658,11 @@
         tr.appendChild(td);
       }
 
-      const ttype = (r.type || "").toLowerCase() === "entrant" ? "Entrant" : "Sortant";
-
-      addCell(ttype);
+      addCell(r.type === "entrant" ? "Entrant" : "Sortant");
       addCell(r.numero || "");
       addCell(r.date || "");
       addCell(
-        (r.type || "").toLowerCase() === "entrant"
+        r.type === "entrant"
           ? (r.expediteur || "-")
           : (r.destinataire || "-")
       );
@@ -425,8 +675,7 @@
       // Pièces
       const tdP = document.createElement("td");
       tdP.className = "tbl-td no-print";
-      const hasPieces = Array.isArray(r.attachments) && r.attachments.length > 0;
-      if (hasPieces) {
+      if (r.hasAttachments) {
         const a = document.createElement("a");
         a.href = "#";
         a.textContent = "Voir";
@@ -454,11 +703,11 @@
         e2.href = "#";
         e2.textContent = "Supprimer";
         e2.className = "text-red-600 underline";
-        e2.onclick = ev => {
+        e2.onclick = async ev => {
           ev.preventDefault();
           if (confirm("Supprimer ce courrier ?")) {
+            if (r.id) await deleteCourrierInSupabase(r.id);
             ROWS = ROWS.filter(x => x.id !== r.id);
-            saveLocal();
             renderAll();
           }
         };
@@ -508,54 +757,50 @@
   }
 
   // ==========================
-  //   VIEWER PIÈCES
+  //   VIEWER PIECES
   // ==========================
-  function viewPieces(r) {
+  async function viewPieces(r) {
     const wrap = document.createElement("div");
 
-    if (Array.isArray(r.attachments) && r.attachments.length) {
-      r.attachments.forEach((a, idx) => {
+    const attachments = await loadAttachmentsForCourrier(r.id);
+
+    if (attachments && attachments.length) {
+      for (let i = 0; i < attachments.length; i++) {
+        const a = attachments[i];
+
         const label = document.createElement("div");
         label.className = "mb-1 text-sm font-semibold text-slate-700";
-        label.textContent = `${idx+1}. ${a.name || "Pièce jointe"}`;
+        label.textContent = `${i+1}. ${a.name || "Pièce jointe"}`;
         wrap.appendChild(label);
 
         const viewer = document.createElement("div");
         viewer.className =
           "mb-4 border border-slate-200 rounded-xl overflow-hidden bg-white";
 
-        const src = a.dataUrl || a.url || "";
+        const url = await getPublicUrl(a.bucket, a.path);
 
-        if (a.mime && a.mime.startsWith("image/")) {
-          const img = document.createElement("img");
-          img.src = src;
-          img.className = "w-full h-auto";
-          viewer.appendChild(img);
-        } else if (
-          a.mime === "application/pdf" ||
-          (a.name || "").toLowerCase().endsWith(".pdf")
-        ) {
+        if (a.name.toLowerCase().endsWith(".pdf")) {
           const emb = document.createElement("embed");
-          emb.src = src;
+          emb.src = url;
           emb.type = "application/pdf";
           emb.style.width = "100%";
           emb.style.height = "480px";
           viewer.appendChild(emb);
-        } else if (src) {
+        } else if (a.name.match(/\.(png|jpe?g|gif|webp)$/i)) {
+          const img = document.createElement("img");
+          img.src = url;
+          img.className = "w-full h-auto";
+          viewer.appendChild(img);
+        } else {
           const ifr = document.createElement("iframe");
-          ifr.src = src;
+          ifr.src = url;
           ifr.style.width = "100%";
           ifr.style.height = "420px";
           viewer.appendChild(ifr);
-        } else {
-          const span = document.createElement("div");
-          span.className = "p-2 text-xs text-slate-500";
-          span.textContent = "Pièce jointe non prévisualisable.";
-          viewer.appendChild(span);
         }
 
         wrap.appendChild(viewer);
-      });
+      }
     } else {
       const empty = document.createElement("div");
       empty.className = "text-sm text-slate-500";
@@ -569,13 +814,13 @@
   // ==========================
   //   FORMULAIRE
   // ==========================
-  function openForm(initial) {
+  async function openForm(initial) {
     if (!CAN_EDIT) return;
 
     const f = initial
       ? JSON.parse(JSON.stringify(initial))
       : {
-          id: "c" + Date.now(),
+          id: null,
           type: "entrant",
           numero: "",
           date: new Date().toISOString().slice(0,10),
@@ -593,7 +838,11 @@
           attachments: []
         };
 
-    if (!Array.isArray(f.attachments)) f.attachments = [];
+    if (initial && initial.id) {
+      f.attachments = await loadAttachmentsForCourrier(initial.id);
+    } else {
+      f.attachments = [];
+    }
 
     const grid = document.createElement("div");
     grid.className = "grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3";
@@ -686,8 +935,13 @@
       </div>
       <div class="lg:col-span-4 md:col-span-3">
         <div class="label">Pièces jointes (PDF / Images)</div>
-        <input id="f_files" type="file" class="input" multiple accept=".pdf,image/*" />
-        <div id="filesList" class="mt-2 flex flex-wrap gap-2 text-[10px] text-slate-700"></div>
+        <input id="f_files" type="file" class="input" multiple
+               accept=".pdf,image/*" />
+        <div id="filesList"
+             class="mt-2 flex flex-wrap gap-2 text-[10px] text-slate-700"></div>
+        <div class="mt-1 text-[10px] text-slate-500">
+          Pour les nouveaux courriers, enregistrer d'abord, puis rouvrir pour ajouter les pièces.
+        </div>
       </div>
     `;
 
@@ -696,27 +950,20 @@
       "lg:col-span-4 md:col-span-3 flex justify-end gap-2 mt-2";
     actions.innerHTML = `
       <button type="button" class="btn" id="btnCancel">Annuler</button>
-      <button type="button" class="btn btn-primary" id="btnSave">Enregistrer</button>
+      <button type="button" class="btn btn-primary" id="btnSave">
+        Enregistrer
+      </button>
     `;
     grid.appendChild(actions);
 
     function renderFilesList() {
       const c = $("#filesList", grid);
       c.innerHTML = "";
-      f.attachments.forEach((a, idx) => {
+      (f.attachments || []).forEach((a, idx) => {
         const span = document.createElement("span");
         span.className =
           "inline-flex items-center gap-1 border border-slate-200 px-2 py-1 rounded-full bg-white";
         span.textContent = a.name || ("Pièce " + (idx+1));
-        const x = document.createElement("button");
-        x.type = "button";
-        x.textContent = "×";
-        x.className = "text-red-500";
-        x.onclick = () => {
-          f.attachments.splice(idx,1);
-          renderFilesList();
-        };
-        span.appendChild(x);
         c.appendChild(span);
       });
     }
@@ -735,26 +982,25 @@
       $("#f_obs",grid).value = f.observation || "";
 
       $("#f_person",grid).value =
-        ( (f.type || "").toLowerCase() === "entrant" ? f.expediteur : f.destinataire ) || "";
+        (f.type === "entrant" ? f.expediteur : f.destinataire) || "";
 
       $("#lblPerson",grid).textContent =
-        (f.type || "").toLowerCase() === "entrant" ? "Expéditeur" : "Destinataire";
+        f.type === "entrant" ? "Expéditeur" : "Destinataire";
       $("#lblService",grid).textContent =
-        (f.type || "").toLowerCase() === "entrant" ? "Service destinataire" : "Service expéditeur";
+        f.type === "entrant" ? "Service destinataire" : "Service expéditeur";
       $("#lblMode",grid).textContent =
-        (f.type || "").toLowerCase() === "entrant" ? "Mode de réception" : "Mode d'envoi";
+        f.type === "entrant" ? "Mode de réception" : "Mode d'envoi";
 
       const btnE = $("#btnEntrant",grid);
       const btnS = $("#btnSortant",grid);
       btnE.classList.remove("btn-active","btn-inactive");
       btnS.classList.remove("btn-active","btn-inactive");
-      if ((f.type || "").toLowerCase() === "sortant") {
-        btnS.classList.add("btn-active");
-        btnE.classList.add("btn-inactive");
-      } else {
+      if (f.type === "entrant") {
         btnE.classList.add("btn-active");
         btnS.classList.add("btn-inactive");
-        f.type = "entrant";
+      } else {
+        btnS.classList.add("btn-active");
+        btnE.classList.add("btn-inactive");
       }
 
       renderFilesList();
@@ -770,7 +1016,7 @@
       if (id === "f_reference") f.reference = v;
       if (id === "f_obs") f.observation = v;
       if (id === "f_person") {
-        if ((f.type || "").toLowerCase() === "entrant") f.expediteur = v;
+        if (f.type === "entrant") f.expediteur = v;
         else f.destinataire = v;
       }
       if (id === "f_echeance") f.echeance = v;
@@ -796,29 +1042,18 @@
       }
     });
 
-    grid.querySelector("#f_files").addEventListener("change", e => {
+    grid.querySelector("#f_files").addEventListener("change", async e => {
       const files = Array.from(e.target.files || []);
       if (!files.length) return;
 
-      let i = 0;
-      function readNext() {
-        const file = files[i++];
-        if (!file) {
-          renderFilesList();
-          return;
+      for (const file of files) {
+        const savedAtt = await uploadAttachmentAndSave(f, file);
+        if (savedAtt) {
+          f.attachments.push(savedAtt);
+          f.hasAttachments = true;
         }
-        const reader = new FileReader();
-        reader.onload = ev => {
-          f.attachments.push({
-            name: file.name,
-            mime: file.type,
-            dataUrl: ev.target.result
-          });
-          readNext();
-        };
-        reader.readAsDataURL(file);
       }
-      readNext();
+      renderFilesList();
       e.target.value = "";
     });
 
@@ -827,19 +1062,25 @@
       if (m) m.remove();
     };
 
-    grid.querySelector("#btnSave").onclick = () => {
+    grid.querySelector("#btnSave").onclick = async () => {
       if (!f.objet || !f.date) {
         alert("Merci de saisir au minimum la date et l'objet.");
         return;
       }
+
+      const saved = await upsertCourrierInSupabase(f);
+      if (!saved) return;
+
+      f.id = saved.id;
+
       const idx = ROWS.findIndex(x => x.id === f.id);
       if (idx >= 0) ROWS[idx] = f;
       else ROWS.unshift(f);
 
-      saveLocal();
       const m = document.getElementById("__modal");
       if (m) m.remove();
-      renderAll();
+
+      await loadRowsFromSupabase();
     };
 
     syncToForm();
@@ -847,101 +1088,38 @@
   }
 
   // ==========================
-  //   IMPORT PIÈCES JOINTES
-  // ==========================
-  function handleImportPieces(fileList, expectedType) {
-    const files = Array.from(fileList || []);
-    if (!files.length) return;
-
-    const mapNumero = {};
-    ROWS.forEach((r, idx) => {
-      const t = String(r.type || "").toLowerCase();
-      if (expectedType && t !== expectedType) return;
-      const k = normalizeNumero(r.numero);
-      if (!k) return;
-      if (!mapNumero[k]) mapNumero[k] = [];
-      mapNumero[k].push(idx);
-    });
-
-    let imported = 0;
-    const unmatched = [];
-
-    let i = 0;
-    function readNext() {
-      const file = files[i++];
-      if (!file) {
-        saveLocal();
-        renderAll();
-        let msg = "Import des pièces terminé.\n";
-        msg += imported + " fichier(s) associé(s).\n";
-        if (unmatched.length) {
-          msg += "\nSans correspondance (" + unmatched.length + ") :\n";
-          msg += unmatched.slice(0, 20).join(", ");
-          if (unmatched.length > 20) msg += " ...";
-        }
-        alert(msg);
-        return;
-      }
-
-      const baseName = file.name.replace(/\.[^.]+$/, "");
-      const key = normalizeNumero(baseName);
-      const targets = mapNumero[key];
-
-      if (!targets || !targets.length) {
-        unmatched.push(file.name);
-        return readNext();
-      }
-
-      const reader = new FileReader();
-      reader.onload = ev => {
-        targets.forEach(idx => {
-          if (!Array.isArray(ROWS[idx].attachments)) ROWS[idx].attachments = [];
-          ROWS[idx].attachments.push({
-            name: file.name,
-            mime: file.type,
-            dataUrl: ev.target.result
-          });
-        });
-        imported++;
-        readNext();
-      };
-      reader.onerror = () => {
-        unmatched.push(file.name + " (erreur lecture)");
-        readNext();
-      };
-      reader.readAsDataURL(file);
-    }
-
-    readNext();
-  }
-
-  // ==========================
   //   IMPORT JSON
   // ==========================
   function handleImportFile(file) {
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = async () => {
       try {
         const data = JSON.parse(reader.result);
         if (!Array.isArray(data)) throw new Error("Format attendu : tableau JSON.");
 
-        const before = ROWS.length;
-        const ids = {};
-        ROWS.forEach(x => { ids[x.id] = true; });
+        for (const x of data) {
+          if (!x || typeof x !== "object") continue;
+          const row = {
+            id: x.id || null,
+            type: x.type || "entrant",
+            numero: x.numero || "",
+            date: x.date || null,
+            expediteur: x.expediteur || "",
+            destinataire: x.destinataire || "",
+            objet: x.objet || "",
+            service: x.service || "",
+            priorite: x.priorite || "Normal",
+            echeance: x.echeance || null,
+            statut: x.statut || "Reçu",
+            instructions: x.instructions || "",
+            observation: x.observation || "",
+            reference: x.reference || ""
+          };
+          await upsertCourrierInSupabase(row);
+        }
 
-        data.forEach((x, i) => {
-          if (!x || typeof x !== "object") return;
-          if (!x.id) x.id = "imp_" + Date.now() + "_" + i;
-          if (!ids[x.id]) {
-            if (!Array.isArray(x.attachments)) x.attachments = [];
-            ROWS.push(x);
-            ids[x.id] = true;
-          }
-        });
-
-        saveLocal();
-        renderAll();
-        alert("Import terminé. " + (ROWS.length - before) + " courriers ajoutés.");
+        await loadRowsFromSupabase();
+        alert("Import terminé.");
       } catch (err) {
         alert("Erreur lors de l'import : " + err.message);
       }
@@ -963,18 +1141,6 @@
     document.getElementById("fileJson").click();
   };
 
-  document.getElementById("btnImportPiecesEntrant").onclick = () => {
-    if (!CAN_EDIT) return;
-    window.__currentPiecesType = "entrant";
-    document.getElementById("filePieces").click();
-  };
-
-  document.getElementById("btnImportPiecesSortant").onclick = () => {
-    if (!CAN_EDIT) return;
-    window.__currentPiecesType = "sortant";
-    document.getElementById("filePieces").click();
-  };
-
   document.getElementById("fileJson").addEventListener("change", e => {
     if (!CAN_EDIT) {
       e.target.value = "";
@@ -985,18 +1151,34 @@
     e.target.value = "";
   });
 
-  document.getElementById("filePieces").addEventListener("change", e => {
+  // Import pièces
+  document.getElementById("btnPiecesArrivees").onclick = () => {
+    if (!CAN_EDIT) return;
+    document.getElementById("filePiecesArrivees").click();
+  };
+  document.getElementById("btnPiecesDeparts").onclick = () => {
+    if (!CAN_EDIT) return;
+    document.getElementById("filePiecesDeparts").click();
+  };
+
+  document.getElementById("filePiecesArrivees").addEventListener("change", e => {
     if (!CAN_EDIT) {
       e.target.value = "";
       return;
     }
-    const files = e.target.files;
-    const expectedType = window.__currentPiecesType || null;
-    if (files && files.length) {
-      handleImportPieces(files, expectedType);
-    }
+    const files = Array.from(e.target.files || []);
+    importPiecesFromFiles(files, "entrant");
     e.target.value = "";
-    window.__currentPiecesType = null;
+  });
+
+  document.getElementById("filePiecesDeparts").addEventListener("change", e => {
+    if (!CAN_EDIT) {
+      e.target.value = "";
+      return;
+    }
+    const files = Array.from(e.target.files || []);
+    importPiecesFromFiles(files, "sortant");
+    e.target.value = "";
   });
 
   document.getElementById("btnExportPDF").onclick = () => {
@@ -1013,12 +1195,16 @@
     renderTable();
   }
 
-  // Au chargement : demander l'utilisateur
+  // ==========================
+  //   INIT
+  // ==========================
   loginUser();
   if (!CURRENT_USER) {
     CURRENT_USER = { name: "consult", canEdit: false };
     applyRole();
   }
+
+  loadRowsFromSupabase();
 </script>
 </body>
 </html>
