@@ -208,17 +208,24 @@
 </div>
 
 <script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
   // ==========================
   //   CONFIG SUPABASE
   // ==========================
-  const SUPABASE_URL = "https://bo-cpst.supabase.co";      // TODO: à remplacer
-  const SUPABASE_ANON_KEY = "ltymaadmjdqpvmpjbxbr";                    // TODO: à remplacer
+  const SUPABASE_URL = "https://bo-cpst.supabase.co";        // ton URL Supabase
+  const SUPABASE_ANON_KEY = "ltymaadmjdqpvmpjbxbr";          // ta clé anon publique
 
-  // Nom des buckets de pièces jointes
-  const BUCKET_ARRIVEES = "bo_pj_arr";                  // TODO: adapter si besoin
-  const BUCKET_DEPARTS  = "bo_pj_dep";                   // TODO: adapter si besoin
+  // Noms EXACTS des buckets de pièces jointes
+  const BUCKET_ARRIVEES = "bo_pj_arr";   // pièces arrivées
+  const BUCKET_DEPARTS  = "bo_pj_dep";   // pièces départs
 
+  // Client Supabase à utiliser partout dans le script
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  
+  // … ensuite ton script continue (ROWS, SERVICES, openForm, renderTable, etc.)
+</script>
+
 
   // ==========================
   //   CONFIG & CONSTANTES
