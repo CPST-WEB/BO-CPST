@@ -208,17 +208,28 @@
 </div>
 
 <script>
-  // ==========================
-  //   CONFIG SUPABASE
-  // ==========================
-  const SUPABASE_URL = "https://TON_PROJET.supabase.co";      // TODO: à remplacer
-  const SUPABASE_ANON_KEY = "TA_CLE_ANON";                    // TODO: à remplacer
+// ===========================
+//   CONFIG SUPABASE
+// ===========================
 
-  // Nom des buckets de pièces jointes
-  const BUCKET_ARRIVEES = "pieces_arrivees";                  // TODO: adapter si besoin
-  const BUCKET_DEPARTS  = "pieces_departs";                   // TODO: adapter si besoin
+// URL de ton projet (depuis Paramètres > API)
+const SUPABASE_URL = "https://ltymaadmjdqpvmjpbxbr.supabase.co";
 
-  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Clé ANON publique (depuis Paramètres > Clés d'API > anon public)
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx0eW1hYWRtamRxcHZtcGpieGJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxNTUxMjYsImV4cCI6MjA3ODczMTEyNn0.K7f-eB2mVd-2lomo9-qI4xWW7X3sFDOzx1ukB4OAgmo";
+
+// Noms EXACTS des buckets Storage
+const BUCKET_ARRIVEES = "bo_pj_arr"; // pièces jointes arrivées
+const BUCKET_DEPARTS  = "bo_pj_dep"; // pièces jointes départ
+
+// Initialisation du client Supabase
+let supabaseClient = null;
+if (window.supabase) {
+  supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+} else {
+  console.error("Supabase JS n'est pas chargé.");
+}
+
 
   // ==========================
   //   CONFIG & CONSTANTES
