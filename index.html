@@ -9,7 +9,6 @@
   <script src="https://cdn.tailwindcss.com"></script>
 
   <style>
-    /* Pour que l'impression soit propre */
     @media print {
       #toolbar,
       #filters,
@@ -59,7 +58,6 @@
           Imprimer / PDF
         </button>
 
-        <!-- input fichier caché pour import JSON -->
         <input type="file" id="json-file-input" accept="application/json" class="hidden" />
       </div>
     </div>
@@ -119,7 +117,7 @@
         </div>
 
         <div>
-          <label class="block text-xs text-gray-500 mb-1">Service destinataire</label>
+          <label class="block text-xs text-gray-500 mb-1">Service</label>
           <input id="filter-service" type="text"
                  class="w-full border rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
                  placeholder="Service..." />
@@ -153,14 +151,13 @@
             </tr>
           </thead>
           <tbody id="courriers-body" class="divide-y divide-gray-100 bg-white">
-            <!-- Lignes générées en JS -->
           </tbody>
         </table>
       </div>
     </section>
   </main>
 
-  <!-- MODAL NOUVEAU / MODIFIER COURRIER -->
+  <!-- MODAL -->
   <div id="modal-overlay"
        class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 hidden">
     <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
@@ -203,14 +200,23 @@
                    class="w-full border rounded-md px-2 py-1.5" required />
           </div>
           <div>
-            <label class="block text-xs text-gray-500 mb-1">Expéditeur</label>
+            <label class="block text-xs text-gray-500 mb-1">Expéditeur / Destinataire</label>
             <input id="expediteur-input" type="text"
                    class="w-full border rounded-md px-2 py-1.5" required />
           </div>
           <div>
-            <label class="block text-xs text-gray-500 mb-1">Service destinataire</label>
-            <input id="service-input" type="text"
-                   class="w-full border rounded-md px-2 py-1.5" />
+            <label class="block text-xs text-gray-500 mb-1">Service</label>
+            <select id="service-input"
+                    class="w-full border rounded-md px-2 py-1.5">
+              <option value="">--</option>
+              <option value="DGS">DGS</option>
+              <option value="SMCSC">SMCSC</option>
+              <option value="SAFP">SAFP</option>
+              <option value="SATDE">SATDE</option>
+              <option value="Bureau d'ordre">Bureau d'ordre</option>
+              <option value="Présidence">Présidence</option>
+              <option value="Autre">Autre</option>
+            </select>
           </div>
         </div>
 
@@ -246,7 +252,7 @@
           <div>
             <label class="block text-xs text-gray-500 mb-1">Objet</label>
             <textarea id="objet-input" rows="3"
-                      class="w-full border rounded-md px-2 py-1.5"></textarea>
+                      class="w-full border rounded-md px-2 py-1.5" required></textarea>
           </div>
           <div>
             <label class="block text-xs text-gray-500 mb-1">Instructions</label>
@@ -275,8 +281,9 @@
           <input id="piece-jointe-input" type="file" accept=".pdf"
                  class="block w-full text-sm text-gray-700" />
           <p class="mt-1 text-xs text-gray-500">
-            Astuce : le fichier sera enregistré dans Supabase avec le nom <strong>NUMERO.pdf</strong>
-            dans le bucket <strong>Arrivees</strong> ou <strong>Departs</strong> selon le type.
+            Le fichier sera enregistré dans Supabase avec le nom
+            <strong>NUMERO.pdf</strong> dans le bucket <strong>Arrivees</strong> ou
+            <strong>Departs</strong>.
           </p>
         </div>
 
@@ -299,24 +306,21 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <script>
-    /******************************************
-     *  CONFIG SUPABASE
-     ******************************************/
+    /* ========= SUPABASE ========= */
     const { createClient } = supabase;
-
     const SUPABASE_URL = "https://ltymaadmjdqpvmpjbxbr.supabase.co";
     const SUPABASE_ANON_KEY =
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx0eW1hYWRtamRxcHZtcGpieGJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxNTUxMjYsImV4cCI6MjA3ODczMTEyNn0.K7f-eB2mVd-2lomo9-qI4xWW7X3sFDOzx1ukB4OAgmo";
 
     const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // données en mémoire + index de modification
+    // ⚠️ NOMS DES BUCKETS (à créer dans Supabase)
+    const BUCKET_ARRIVEES = "Arrivees";
+    const BUCKET_DEPARTS = "Departs";
+
+    /* ========= DONNÉES ========= */
     let courriers = [];
     let editIndex = null;
-
-    /******************************************
-     *  LOCALSTORAGE
-     ******************************************/
     const STORAGE_KEY = "bo_cpst_courriers";
 
     function loadCourriers() {
@@ -328,30 +332,25 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(courriers));
     }
 
-    /******************************************
-     *  STATS
-     ******************************************/
+    /* ========= STATS ========= */
     function computeStats() {
       const total = courriers.length;
       const entrants = courriers.filter(c => c.type === "Entrant").length;
       const sortants = courriers.filter(c => c.type === "Sortant").length;
       const enTraitement = courriers.filter(c => c.statut === "En cours").length;
-      const urgents = courriers.filter(c => c.priorite && c.priorite.toLowerCase().includes("urgent")).length;
-
+      const urgents = courriers.filter(c => (c.priorite || "").toLowerCase().includes("urgent"));
       const today = new Date().toISOString().slice(0, 10);
-      const echues = courriers.filter(c => c.echeance && c.echeance < today && c.statut !== "Clôturé").length;
+      const echues = courriers.filter(c => c.echeance && c.echeance < today && c.statut !== "Clôturé");
 
       document.getElementById("stat-total").textContent = total;
       document.getElementById("stat-entrants").textContent = entrants;
       document.getElementById("stat-sortants").textContent = sortants;
       document.getElementById("stat-traitement").textContent = enTraitement;
-      document.getElementById("stat-urgents").textContent = urgents;
-      document.getElementById("stat-echues").textContent = echues;
+      document.getElementById("stat-urgents").textContent = urgents.length;
+      document.getElementById("stat-echues").textContent = echues.length;
     }
 
-    /******************************************
-     *  RENDU DU TABLEAU
-     ******************************************/
+    /* ========= TABLEAU ========= */
     function renderTable() {
       const tbody = document.getElementById("courriers-body");
       tbody.innerHTML = "";
@@ -362,7 +361,6 @@
       const dateFilter = document.getElementById("filter-date").value;
 
       courriers.forEach((c, index) => {
-        // filtres
         if (typeFilter !== "tous" && c.type !== typeFilter) return;
         if (serviceFilter && !(c.service || "").toLowerCase().includes(serviceFilter)) return;
         if (dateFilter && c.date !== dateFilter) return;
@@ -380,7 +378,7 @@
         const tr = document.createElement("tr");
         tr.className = "hover:bg-slate-50";
 
-        const urgentBadge = (c.priorite && c.priorite.toLowerCase().includes("urgent"))
+        const urgentBadge = (c.priorite || "").toLowerCase().includes("urgent")
           ? '<span class="inline-flex items-center px-2 py-0.5 text-[10px] font-semibold rounded-full bg-red-100 text-red-700">Urgent</span>'
           : "";
 
@@ -426,9 +424,7 @@
       computeStats();
     }
 
-    /******************************************
-     *  MODAL
-     ******************************************/
+    /* ========= MODAL ========= */
     const modalOverlay = document.getElementById("modal-overlay");
     const modalTitle = document.getElementById("modal-title");
     const courrierForm = document.getElementById("courrier-form");
@@ -464,14 +460,11 @@
       }
     }
 
-    /******************************************
-     *  UPLOAD PIECE JOINTE
-     ******************************************/
+    /* ========= PIÈCE JOINTE ========= */
     async function uploadPieceJointe(numero, typeCourrier, file, existingUrl = null) {
       if (!file) return existingUrl || null;
 
-      const bucketName = typeCourrier === "Entrant" ? "Arrivees" : "Departs";
-
+      const bucketName = typeCourrier === "Entrant" ? BUCKET_ARRIVEES : BUCKET_DEPARTS;
       const parts = file.name.split(".");
       const ext = parts.length > 1 ? parts.pop().toLowerCase() : "pdf";
       const path = `${numero}.${ext}`;
@@ -505,18 +498,15 @@
       }
       window.open(url, "_blank");
     }
+    window.voirPieceJointe = voirPieceJointe;
 
-    window.voirPieceJointe = voirPieceJointe; // pour accès dans onclick HTML
-
-    /******************************************
-     *  CRUD COURRIERS
-     ******************************************/
+    /* ========= CRUD ========= */
     function ouvrirEdition(index) {
       editIndex = index;
-      const c = courriers[index];
-      remplirFormulaire(c);
+      remplirFormulaire(courriers[index]);
       openModal(false);
     }
+    window.ouvrirEdition = ouvrirEdition;
 
     function supprimerCourrier(index) {
       if (!confirm("Supprimer ce courrier ?")) return;
@@ -524,13 +514,9 @@
       saveCourriers();
       renderTable();
     }
-
-    window.ouvrirEdition = ouvrirEdition;
     window.supprimerCourrier = supprimerCourrier;
 
-    /******************************************
-     *  FORM SUBMIT
-     ******************************************/
+    /* ========= SUBMIT FORM ========= */
     courrierForm.addEventListener("submit", async (e) => {
       e.preventDefault();
 
@@ -538,7 +524,7 @@
       const numero = document.getElementById("numero-input").value.trim();
       const date = document.getElementById("date-input").value;
       const expediteur = document.getElementById("expediteur-input").value.trim();
-      const service = document.getElementById("service-input").value.trim();
+      const service = document.getElementById("service-input").value;
       const priorite = document.getElementById("priorite-input").value;
       const echeance = document.getElementById("echeance-input").value;
       const statut = document.getElementById("statut-input").value;
@@ -548,6 +534,21 @@
       const observations = document.getElementById("observations-input").value.trim();
       const fileInput = document.getElementById("piece-jointe-input");
       const file = fileInput.files[0] || null;
+
+      // Vérifier les champs obligatoires (en plus du "required" HTML)
+      if (!numero || !date || !expediteur || !objet) {
+        alert("Les champs N°, Date, Expéditeur/Destinataire et Objet sont obligatoires.");
+        return;
+      }
+
+      // Vérifier unicité du numéro (tous types confondus)
+      const duplicate = courriers.some((c, idx) =>
+        idx !== editIndex && c.numero === numero
+      );
+      if (duplicate) {
+        alert("Ce numéro d'enregistrement existe déjà. Chaque courrier doit avoir un numéro unique (entrant et sortant).");
+        return;
+      }
 
       let existingUrl = null;
       if (editIndex !== null && courriers[editIndex]) {
@@ -583,9 +584,7 @@
       closeModal();
     });
 
-    /******************************************
-     *  IMPORT JSON
-     ******************************************/
+    /* ========= IMPORT JSON ========= */
     document.getElementById("import-json-btn").addEventListener("click", () => {
       document.getElementById("json-file-input").click();
     });
@@ -612,23 +611,18 @@
         }
       };
       reader.readAsText(file, "utf-8");
-      e.target.value = ""; // reset
+      e.target.value = "";
     });
 
-    /******************************************
-     *  IMPRESSION
-     ******************************************/
+    /* ========= IMPRESSION ========= */
     document.getElementById("print-btn").addEventListener("click", () => {
       window.print();
     });
 
-    /******************************************
-     *  BOUTONS MODAL / NOUVEAU
-     ******************************************/
+    /* ========= BOUTONS MODAL / INIT ========= */
     document.getElementById("new-mail-btn").addEventListener("click", () => {
       editIndex = null;
       courrierForm.reset();
-      // Valeurs par défaut
       document.getElementById("type-entrant").checked = true;
       document.getElementById("priorite-input").value = "Normal";
       document.getElementById("statut-input").value = "Reçu";
@@ -637,22 +631,15 @@
 
     document.getElementById("modal-close").addEventListener("click", closeModal);
     document.getElementById("modal-cancel").addEventListener("click", closeModal);
-
     modalOverlay.addEventListener("click", (e) => {
       if (e.target === modalOverlay) closeModal();
     });
 
-    /******************************************
-     *  FILTRES
-     ******************************************/
     document.getElementById("search-input").addEventListener("input", renderTable);
     document.getElementById("filter-type").addEventListener("change", renderTable);
     document.getElementById("filter-service").addEventListener("input", renderTable);
     document.getElementById("filter-date").addEventListener("change", renderTable);
 
-    /******************************************
-     *  INIT
-     ******************************************/
     loadCourriers();
     renderTable();
   </script>
