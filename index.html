@@ -210,12 +210,16 @@
                     class="w-full border rounded-md px-2 py-1.5">
               <option value="">--</option>
               <option value="DGS">DGS</option>
+              <option value="SECRETARIAT">SECRETARIAT</option>
+              <option value="PRESIDENCE">PRESIDENCE</option>
               <option value="SMCSC">SMCSC</option>
-              <option value="SAFP">SAFP</option>
+              <option value="DAPC">DAPC</option>
               <option value="SATDE">SATDE</option>
-              <option value="Bureau d'ordre">Bureau d'ordre</option>
-              <option value="Présidence">Présidence</option>
-              <option value="Autre">Autre</option>
+              <option value="SAFP">SAFP</option>
+              <option value="SRHAJ">SRHAJ</option>
+              <option value="BGA">BGA</option>
+              <option value="BGPA">BGPA</option>
+              <option value="BIN">BIN</option>
             </select>
           </div>
         </div>
@@ -282,8 +286,8 @@
                  class="block w-full text-sm text-gray-700" />
           <p class="mt-1 text-xs text-gray-500">
             Le fichier sera enregistré dans Supabase avec le nom
-            <strong>NUMERO.pdf</strong> dans le bucket <strong>Arrivees</strong> ou
-            <strong>Departs</strong>.
+            <strong>NUMERO.pdf</strong> dans le bucket <strong>Arrivee</strong> ou
+            <strong>Depart</strong>.
           </p>
         </div>
 
@@ -314,9 +318,10 @@
 
     const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // ⚠️ NOMS DES BUCKETS (à créer dans Supabase)
-    const BUCKET_ARRIVEES = "Arrivees";
-    const BUCKET_DEPARTS = "Departs";
+    // ⚠️ NOMS DES BUCKETS DANS SUPABASE
+    // Mets ici exactement les noms que tu as créés (Arrivee / Depart par exemple)
+    const BUCKET_ARRIVEES = "Arrivee";
+    const BUCKET_DEPARTS  = "Depart";
 
     /* ========= DONNÉES ========= */
     let courriers = [];
@@ -465,6 +470,8 @@
       if (!file) return existingUrl || null;
 
       const bucketName = typeCourrier === "Entrant" ? BUCKET_ARRIVEES : BUCKET_DEPARTS;
+      console.log("Upload vers bucket:", bucketName);
+
       const parts = file.name.split(".");
       const ext = parts.length > 1 ? parts.pop().toLowerCase() : "pdf";
       const path = `${numero}.${ext}`;
@@ -479,7 +486,7 @@
 
       if (error) {
         console.error("Erreur Supabase Storage:", error);
-        alert("Pièce jointe : erreur lors de l'envoi vers Supabase.\n\n" + error.message);
+        alert("Pièce jointe : erreur lors de l'envoi vers Supabase.\n\n" + error.message + "\n\nBucket utilisé : " + bucketName);
         return existingUrl || null;
       }
 
@@ -496,6 +503,7 @@
         alert("Aucune pièce jointe pour ce courrier.");
         return;
       }
+      // On ouvre simplement l'URL publique dans un nouvel onglet
       window.open(url, "_blank");
     }
     window.voirPieceJointe = voirPieceJointe;
@@ -535,20 +543,13 @@
       const fileInput = document.getElementById("piece-jointe-input");
       const file = fileInput.files[0] || null;
 
-      // Vérifier les champs obligatoires (en plus du "required" HTML)
+      // Champs obligatoires
       if (!numero || !date || !expediteur || !objet) {
         alert("Les champs N°, Date, Expéditeur/Destinataire et Objet sont obligatoires.");
         return;
       }
 
-      // Vérifier unicité du numéro (tous types confondus)
-      const duplicate = courriers.some((c, idx) =>
-        idx !== editIndex && c.numero === numero
-      );
-      if (duplicate) {
-        alert("Ce numéro d'enregistrement existe déjà. Chaque courrier doit avoir un numéro unique (entrant et sortant).");
-        return;
-      }
+      // 👉 PAS DE CONTRAINTE D'UNICITÉ DU NUMÉRO (on l'a enlevée)
 
       let existingUrl = null;
       if (editIndex !== null && courriers[editIndex]) {
