@@ -318,10 +318,9 @@
 
     const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // ⚠️ NOMS DES BUCKETS DANS SUPABASE
-    // Mets ici exactement les noms que tu as créés (Arrivee / Depart par exemple)
-    const BUCKET_ARRIVEES = "arrivees";
-    const BUCKET_DEPARTS  = "Depart";
+    // ⚠️ NOMS DES BUCKETS (doivent exister dans Supabase)
+    const BUCKET_ARRIVEES = "Arrivee";
+    const BUCKET_DEPARTS = "Depart";
 
     /* ========= DONNÉES ========= */
     let courriers = [];
@@ -470,8 +469,6 @@
       if (!file) return existingUrl || null;
 
       const bucketName = typeCourrier === "Entrant" ? BUCKET_ARRIVEES : BUCKET_DEPARTS;
-      console.log("Upload vers bucket:", bucketName);
-
       const parts = file.name.split(".");
       const ext = parts.length > 1 ? parts.pop().toLowerCase() : "pdf";
       const path = `${numero}.${ext}`;
@@ -486,7 +483,7 @@
 
       if (error) {
         console.error("Erreur Supabase Storage:", error);
-        alert("Pièce jointe : erreur lors de l'envoi vers Supabase.\n\n" + error.message + "\n\nBucket utilisé : " + bucketName);
+        alert("Pièce jointe : erreur lors de l'envoi vers Supabase.\n\n" + error.message);
         return existingUrl || null;
       }
 
@@ -503,7 +500,6 @@
         alert("Aucune pièce jointe pour ce courrier.");
         return;
       }
-      // On ouvre simplement l'URL publique dans un nouvel onglet
       window.open(url, "_blank");
     }
     window.voirPieceJointe = voirPieceJointe;
@@ -543,13 +539,11 @@
       const fileInput = document.getElementById("piece-jointe-input");
       const file = fileInput.files[0] || null;
 
-      // Champs obligatoires
+      // vérif champs obligatoires
       if (!numero || !date || !expediteur || !objet) {
         alert("Les champs N°, Date, Expéditeur/Destinataire et Objet sont obligatoires.");
         return;
       }
-
-      // 👉 PAS DE CONTRAINTE D'UNICITÉ DU NUMÉRO (on l'a enlevée)
 
       let existingUrl = null;
       if (editIndex !== null && courriers[editIndex]) {
