@@ -1,1221 +1,759 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bureau d'Ordre — Gestion du Courrier</title>
-
-  <!-- Tailwind -->
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- Supabase -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <style>
-    .card {
-      border-radius: 16px;
-      background: #ffffff;
-      box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
-      padding: 16px;
-    }
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: .5rem;
-      border: 1px solid #e5e7eb;
-      border-radius: 999px;
-      padding: .55rem 1.1rem;
-      font-weight: 600;
-      cursor: pointer;
-      font-size: .9rem;
-      background: #ffffff;
-      transition: all .15s ease;
-      white-space: nowrap;
-    }
-    .btn:hover {
-      box-shadow: 0 4px 10px rgba(148, 163, 253, 0.25);
-      transform: translateY(-1px);
-    }
-    .btn-primary {
-      background: #1d4ed8;
-      color: #ffffff;
-      border-color: #1d4ed8;
-    }
-    .btn-ghost {
-      background: #f8fafc;
-    }
-    .btn-toggle {
-      min-width: 11rem;
-      justify-content: center;
-      border-width: 2px;
-    }
-    .btn-active {
-      background: #1d4ed8;
-      color: #fff;
-      border-color: #1d4ed8;
-    }
-    .btn-inactive {
-      background: #ffffff;
-      color: #1f2937;
-      border-color: #bfdbfe;
-    }
-    .input {
-      width: 100%;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      padding: .55rem .8rem;
-      font-size: .9rem;
-      background: #ffffff;
-    }
-    .input-lg {
-      padding: .8rem .9rem;
-      font-size: .95rem;
-    }
-    .label {
-      font-size: .72rem;
-      font-weight: 600;
-      color: #6b7280;
-      text-transform: uppercase;
-      letter-spacing: .06em;
-    }
-    .tbl-th {
-      text-align: left;
-      font-size: .7rem;
-      font-weight: 700;
-      color: #6b7280;
-      text-transform: uppercase;
-      padding: .35rem .45rem;
-      border-bottom: 1px solid #e5e7eb;
-    }
-    .tbl-td {
-      font-size: .82rem;
-      color: #111827;
-      padding: .4rem .45rem;
-      vertical-align: top;
-    }
-    @media print {
-      .no-print { display: none !important; }
-      body { background: #ffffff; }
-      .card { box-shadow: none; }
-      header { position: static !important; }
-    }
-  </style>
-</head>
-
-<body class="bg-slate-50 text-slate-900">
-<div class="max-w-7xl mx-auto px-4 py-6 space-y-4">
-
-  <!-- ENTÊTE -->
-  <header class="no-print sticky top-0 z-20 bg-white/95 backdrop-blur border border-slate-200 rounded-2xl mb-4 shadow-sm">
-    <div class="px-5 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-
-      <!-- Logo + titre -->
-      <div class="flex items-center gap-3">
-        <img src="logo%20CPST.png"
-             alt="Conseil Préfectoral Skhirate Témara"
-             class="h-12 w-auto object-contain rounded-md bg-white" />
-        <div>
-          <div class="text-xs text-slate-500">
-            Conseil Préfectoral Skhirate Témara
-          </div>
-          <div class="text-lg md:text-xl font-bold text-slate-900">
-            Bureau d'Ordre — Gestion du Courrier
-          </div>
-        </div>
-      </div>
-
-      <!-- Boutons -->
-      <div class="flex flex-wrap gap-2 justify-start md:justify-end items-center">
-        <span id="userLabel" class="text-[10px] text-slate-500 mr-1 hidden"></span>
-
-        <button class="btn btn-ghost" id="btnUser">Changer d'utilisateur</button>
-
-        <!-- Import JSON -->
-        <input id="fileJson" type="file" accept=".json,application/json" class="hidden" />
-        <button class="btn btn-ghost" id="btnImport">Importer JSON</button>
-
-        <!-- Import pièces -->
-        <input id="filePiecesArrivees" type="file" accept=".pdf" multiple class="hidden" />
-        <input id="filePiecesDeparts" type="file" accept=".pdf" multiple class="hidden" />
-        <button class="btn btn-ghost" id="btnPiecesArrivees">Pièces arrivées</button>
-        <button class="btn btn-ghost" id="btnPiecesDeparts">Pièces départs</button>
-
-        <!-- Export PDF -->
-        <button class="btn btn-ghost" id="btnExportPDF">Exporter PDF</button>
-
-        <!-- Nouveau -->
-        <button class="btn btn-primary" id="btnNew">Nouveau courrier</button>
-      </div>
-    </div>
-  </header>
-
-  <!-- FILTRES -->
-  <section class="card no-print">
-    <div class="grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
-      <div class="md:col-span-3">
-        <div class="label">Recherche</div>
-        <input id="search" class="input" placeholder="Objet, n°, expéditeur, destinataire, référence…" />
-      </div>
-      <div>
-        <div class="label">Type</div>
-        <select id="filterType" class="input">
-          <option value="">Tous</option>
-          <option value="entrant">Entrant</option>
-          <option value="sortant">Sortant</option>
-        </select>
-      </div>
-      <div>
-        <div class="label">Service</div>
-        <select id="filterService" class="input">
-          <option value="">Tous</option>
-        </select>
-      </div>
-      <div>
-        <div class="label">Date</div>
-        <input id="filterDate" type="date" class="input" />
-      </div>
-      <div class="md:col-span-1 text-[10px] text-right text-slate-500">
-        Données stockées dans Supabase (cloud).
-      </div>
-    </div>
-  </section>
-
-  <!-- STATS -->
-  <section id="stats" class="grid grid-cols-2 md:grid-cols-6 gap-3 no-print"></section>
-
-  <!-- TABLEAU -->
-  <section class="card">
-    <table class="min-w-full" id="tbl">
-      <thead>
-      <tr>
-        <th class="tbl-th">Type</th>
-        <th class="tbl-th">N°</th>
-        <th class="tbl-th">Date</th>
-        <th class="tbl-th">Expéditeur / Destinataire</th>
-        <th class="tbl-th">Objet</th>
-        <th class="tbl-th">Service</th>
-        <th class="tbl-th">Priorité</th>
-        <th class="tbl-th">Échéance</th>
-        <th class="tbl-th">Statut</th>
-        <th class="tbl-th no-print">Pièces</th>
-        <th class="tbl-th no-print">Actions</th>
-      </tr>
-      </thead>
-      <tbody id="tbody" class="divide-y divide-slate-100"></tbody>
-    </table>
-  </section>
-
-</div>
-
 <script>
-// ===========================
-//   CONFIG SUPABASE
-// ===========================
+/* ============================
+   CONFIG SUPABASE
+   ============================ */
 
-// URL de ton projet (depuis Paramètres > API)
-const SUPABASE_URL = "https://ltymaadmjdqpvmjpbxbr.supabase.co";
+const { createClient } = supabase;
 
-// Clé ANON publique (depuis Paramètres > Clés d'API > anon public)
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx0eW1hYWRtamRxcHZtcGpieGJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxNTUxMjYsImV4cCI6MjA3ODczMTEyNn0.K7f-eB2mVd-2lomo9-qI4xWW7X3sFDOzx1ukB4OAgmo";
+// 🔴 ADAPTE CES 2 VALEURS 🔴
+const SUPABASE_URL = "https://ltymaadmjdqpvmpjbxbr.supabase.co";
+const SUPABASE_ANON_KEY = "COLLE_ICI_TA_CLE_ANON_COMPLETE"; // remplace par ta vraie clé anon
 
-// Noms EXACTS des buckets Storage
-const BUCKET_ARRIVEES = "bo_pj_arr"; // pièces jointes arrivées
-const BUCKET_DEPARTS  = "bo_pj_dep"; // pièces jointes départ
+// Noms des buckets pour les pièces jointes
+// (tu les as créés comme ça dans le stockage)
+const BUCKET_ARRIVEES = "bo_pj_arr";  // arrivées (entrant)
+const BUCKET_DEPARTS  = "bo_pj_dep";  // départs (sortant)
 
-// Initialisation du client Supabase
-let supabaseClient = null;
-if (window.supabase) {
-  supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-} else {
-  console.error("Supabase JS n'est pas chargé.");
+// Client Supabase
+const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* ============================
+   ETAT GLOBAL
+   ============================ */
+
+let ROWS = [];          // liste de tous les courriers (venant de la table "courriers")
+let CURRENT_USER = null;
+let CAN_EDIT = false;
+
+/* ============================
+   OUTIL PRATIQUE
+   ============================ */
+
+function $(sel, parent) {
+  return (parent || document).querySelector(sel);
 }
 
+/* ============================
+   ROLES / UTILISATEURS
+   ============================ */
 
-  // ==========================
-  //   CONFIG & CONSTANTES
-  // ==========================
-  const KEY = "bo_cpst_courrier_v1";
+const ACCOUNTS = {
+  bo:      { password: "1234", canEdit: true },   // Bureau d'ordre - édition
+  consult: { password: "1234", canEdit: false }   // Consultation seule
+};
 
-  // Services
-  const SERVICES = [
-    "Secrétariat",
-    "Direction des Affaires de la Présidence",
-    "Direction Générale des Services",
-    "Service Mutualisation Coopération et Société Civile",
-    "Service Gestion des Ressources humaines et Affaires Juridiques",
-    "Service Des Affaires Financières et Patrimoine",
-    "Service des Affaires Techniques et Développement et des Équipements",
-    "DGS",
-    "SMCSC",
-    "SRHAJ",
-    "SAFP",
-    "DAPC",
-    "Bureau de Gestion du Parc",
-    "Bureau de Gestion des Archives",
-    "Bureau d'information et Numérisation"
-  ];
+function applyRole() {
+  const userLabel = document.getElementById("userLabel");
+  CAN_EDIT = !!(CURRENT_USER && CURRENT_USER.canEdit);
 
-  // Comptes internes
-  const ACCOUNTS = {
-    bo:      { password: "1234", canEdit: true },   // Bureau d'ordre
-    consult: { password: "1234", canEdit: false }   // Consultation
-  };
-
-  let CURRENT_USER = null;
-  let CAN_EDIT = false;
-
-  function $(sel, parent){ return (parent || document).querySelector(sel); }
-
-  // Données en mémoire
-  let ROWS = []; // courriers
-
-  // ==========================
-  //   ROLES / LOGIN
-  // ==========================
-  function applyRole() {
-    const userLabel = document.getElementById("userLabel");
-    CAN_EDIT = !!(CURRENT_USER && CURRENT_USER.canEdit);
-
-    if (CURRENT_USER) {
-      userLabel.textContent =
-        `Connecté : ${CURRENT_USER.name} (${CAN_EDIT ? "édition" : "consultation"})`;
-      userLabel.classList.remove("hidden");
-    } else {
-      userLabel.textContent = "";
-      userLabel.classList.add("hidden");
-    }
-
-    document.getElementById("btnNew").style.display    = CAN_EDIT ? "inline-flex" : "none";
-    document.getElementById("btnImport").style.display = CAN_EDIT ? "inline-flex" : "none";
-    document.getElementById("btnPiecesArrivees").style.display = CAN_EDIT ? "inline-flex" : "none";
-    document.getElementById("btnPiecesDeparts").style.display  = CAN_EDIT ? "inline-flex" : "none";
-
-    renderAll();
+  if (CURRENT_USER) {
+    userLabel.textContent = `Connecté : ${CURRENT_USER.name} (${CAN_EDIT ? "édition" : "consultation"})`;
+    userLabel.classList.remove("hidden");
+  } else {
+    userLabel.textContent = "";
+    userLabel.classList.add("hidden");
   }
 
-  function loginUser() {
-    const u = prompt("Nom d'utilisateur :\n- bo\n- consult");
-    if (!u) return;
-    const account = ACCOUNTS[u.trim()];
-    if (!account) {
-      alert("Utilisateur inconnu.");
-      return loginUser();
-    }
-    const pwd = prompt("Mot de passe :");
-    if (pwd !== account.password) {
-      alert("Mot de passe incorrect.");
-      return loginUser();
-    }
-    CURRENT_USER = { name: u.trim(), canEdit: account.canEdit };
-    applyRole();
-  }
+  // Boutons réservés aux éditeurs
+  const btnNew = document.getElementById("btnNew");
+  const btnImport = document.getElementById("btnImport");
 
-  // ==========================
-  //   SUPABASE : COURRIERS
-  // ==========================
-  async function loadRowsFromSupabase() {
-    // 1) Courriers
+  if (btnNew)   btnNew.style.display   = CAN_EDIT ? "inline-flex" : "none";
+  if (btnImport) btnImport.style.display = CAN_EDIT ? "inline-flex" : "none";
+
+  renderAll();
+}
+
+function loginUser() {
+  const u = prompt("Nom d'utilisateur :\n- bo\n- consult");
+  if (!u) return;
+  const account = ACCOUNTS[u.trim()];
+  if (!account) {
+    alert("Utilisateur inconnu.");
+    return loginUser();
+  }
+  const pwd = prompt("Mot de passe :");
+  if (pwd !== account.password) {
+    alert("Mot de passe incorrect.");
+    return loginUser();
+  }
+  CURRENT_USER = { name: u.trim(), canEdit: account.canEdit };
+  applyRole();
+}
+
+/* ============================
+   LECTURE / ECRITURE COURRIERS
+   (TABLE 'courriers')
+   ============================ */
+
+async function loadCourriersFromSupabase() {
+  try {
     const { data, error } = await supabaseClient
       .from("courriers")
       .select("*")
-      .order("date", { ascending: true });
+      .order("date", { ascending: true })
+      .order("numero", { ascending: true });
 
     if (error) {
-      console.error("Erreur chargement Supabase :", error);
+      console.error(error);
       alert("Erreur lors du chargement des courriers depuis Supabase.");
-      ROWS = [];
-    } else {
-      ROWS = (data || []).map(row => ({
-        id: row.id,
-        type: row.type,
-        numero: row.numero || "",
-        date: row.date || "",
-        expediteur: row.expediteur || "",
-        destinataire: row.destinataire || "",
-        objet: row.objet || "",
-        service: row.service || "",
-        priorite: row.priorite || "",
-        echeance: row.echeance || "",
-        statut: row.statut || "",
-        instructions: row.instructions || "",
-        observation: row.observation || "",
-        reference: row.reference || "",
-        hasAttachments: false
-      }));
+      return;
     }
 
-    // 2) Attachements (juste pour savoir s'il y en a)
-    const { data: att, error: attErr } = await supabaseClient
-      .from("attachments")
-      .select("courrier_id");
-
-    if (!attErr && att) {
-      const map = {};
-      att.forEach(a => { map[a.courrier_id] = true; });
-      ROWS.forEach(r => { r.hasAttachments = !!map[r.id]; });
-    }
-
-    // Mise à jour de la liste des services dans le filtre
-    const serviceSet = new Set(SERVICES);
-    ROWS.forEach(r => {
-      if (r.service) serviceSet.add(r.service);
-    });
-    const selectService = document.getElementById("filterService");
-    selectService.innerHTML = '<option value="">Tous</option>';
-    Array.from(serviceSet).sort().forEach(s => {
-      const opt = document.createElement("option");
-      opt.value = s;
-      opt.textContent = s;
-      selectService.appendChild(opt);
-    });
-
+    ROWS = data || [];
     renderAll();
+  } catch (err) {
+    console.error(err);
+    alert("Erreur inattendue lors du chargement des courriers.");
   }
+}
 
-  async function upsertCourrierInSupabase(row) {
-    const payload = {
-      id: row.id || null,
-      type: row.type,
-      numero: row.numero || "",
-      date: row.date || null,
-      expediteur: row.expediteur || "",
-      destinataire: row.destinataire || "",
-      objet: row.objet || "",
-      service: row.service || "",
-      priorite: row.priorite || "",
-      echeance: row.echeance || null,
-      statut: row.statut || "",
-      instructions: row.instructions || "",
-      observation: row.observation || "",
-      reference: row.reference || ""
-    };
+async function saveCourrierToSupabase(f) {
+  // f contient toutes les infos du courrier
+  const payload = {
+    type:         f.type,
+    numero:       f.numero,
+    date:         f.date || null,
+    expediteur:   f.expediteur || null,
+    destinataire: f.destinataire || null,
+    objet:        f.objet || null,
+    service:      f.service || null,
+    priorite:     f.priorite || null,
+    echeance:     f.echeance || null,
+    statut:       f.statut || null,
+    instructions: f.instructions || null,
+    observation:  f.observation || null,
+    reference:    f.reference || null
+  };
 
-    const { data, error } = await supabaseClient
-      .from("courriers")
-      .upsert(payload, { onConflict: "id" })
-      .select()
-      .single();
+  try {
+    if (f.id) {
+      // UPDATE
+      const { error } = await supabaseClient
+        .from("courriers")
+        .update(payload)
+        .eq("id", f.id);
 
-    if (error) {
-      console.error("Erreur sauvegarde Supabase :", error);
-      alert("Erreur lors de la sauvegarde du courrier dans Supabase.");
-      return null;
+      if (error) {
+        console.error(error);
+        alert("Erreur lors de la mise à jour du courrier.");
+        return null;
+      }
+      return f;
+    } else {
+      // INSERT
+      const { data, error } = await supabaseClient
+        .from("courriers")
+        .insert(payload)
+        .select()
+        .single();
+
+      if (error) {
+        console.error(error);
+        alert("Erreur lors de la création du courrier.");
+        return null;
+      }
+      return data; // contient id généré
     }
-    return data;
+  } catch (err) {
+    console.error(err);
+    alert("Erreur inattendue lors de l'enregistrement du courrier.");
+    return null;
   }
+}
 
-  async function deleteCourrierInSupabase(id) {
-    // Supprimer les pièces jointes d'abord (sinon erreur de clé étrangère)
-    await supabaseClient.from("attachments").delete().eq("courrier_id", id);
+async function deleteCourrierFromSupabase(id) {
+  try {
     const { error } = await supabaseClient
       .from("courriers")
       .delete()
       .eq("id", id);
 
     if (error) {
-      console.error("Erreur suppression Supabase :", error);
-      alert("Erreur lors de la suppression du courrier dans Supabase.");
+      console.error(error);
+      alert("Erreur lors de la suppression du courrier.");
     }
+  } catch (err) {
+    console.error(err);
+    alert("Erreur inattendue lors de la suppression du courrier.");
+  }
+}
+
+/* ============================
+   GESTION PIECES JOINTES
+   (STOCKAGE SUPABASE)
+   ============================ */
+/*
+Principe simple :
+- Bucket bo_pj_arr : PDF d'arrivée
+- Bucket bo_pj_dep : PDF de départ
+- Nom du fichier = numero + ".pdf" (ex : 25.pdf)
+*/
+
+async function uploadAttachmentIfAny(f, fileInput) {
+  if (!fileInput || !fileInput.files || !fileInput.files.length) return;
+
+  const file = fileInput.files[0];
+  if (!file) return;
+
+  if (!f.numero) {
+    alert("Numéro d'enregistrement manquant pour nommer la pièce jointe.");
+    return;
   }
 
-  // ==========================
-  //   SUPABASE : ATTACHMENTS
-  // ==========================
-  async function loadAttachmentsForCourrier(courrierId) {
-    if (!courrierId) return [];
-    const { data, error } = await supabaseClient
-      .from("attachments")
-      .select("*")
-      .eq("courrier_id", courrierId);
+  const isEntrant = f.type === "entrant";
+  const bucket = isEntrant ? BUCKET_ARRIVEES : BUCKET_DEPARTS;
+  const path = `${f.numero}.pdf`; // 25 -> 25.pdf
 
-    if (error) {
-      console.error("Erreur chargement pièces :", error);
-      return [];
-    }
-    return (data || []).map(a => ({
-      id: a.id,
-      name: a.file_name,
-      bucket: a.bucket,
-      path: a.path,
-      type: a.type
-    }));
-  }
-
-  async function uploadAttachmentAndSave(courrier, file) {
-    if (!courrier.id) {
-      alert("Enregistrez d'abord le courrier, puis rouvrez-le pour ajouter des pièces jointes.");
-      return null;
-    }
-
-    const type = courrier.type === "sortant" ? "sortant" : "entrant";
-    const bucket = type === "entrant" ? BUCKET_ARRIVEES : BUCKET_DEPARTS;
-    const numero = (courrier.numero || "sans_num").toString().trim() || "sans_num";
-    const safeName = file.name.replace(/\s+/g, "_");
-    const path = `${numero}_${Date.now()}_${safeName}`;
-
-    const { error: upErr } = await supabaseClient
+  try {
+    const { error } = await supabaseClient
       .storage
       .from(bucket)
       .upload(path, file, { upsert: true });
 
-    if (upErr) {
-      console.error("Erreur upload fichier :", upErr);
-      alert("Erreur lors du téléversement de la pièce jointe.");
-      return null;
-    }
-
-    const { data, error } = await supabaseClient
-      .from("attachments")
-      .insert({
-        courrier_id: courrier.id,
-        type,
-        file_name: file.name,
-        bucket,
-        path
-      })
-      .select()
-      .single();
-
     if (error) {
-      console.error("Erreur enregistrement pièce :", error);
-      alert("Erreur lors de l'enregistrement de la pièce jointe.");
-      return null;
-    }
-
-    return {
-      id: data.id,
-      name: data.file_name,
-      bucket: data.bucket,
-      path: data.path,
-      type: data.type
-    };
-  }
-
-  async function getPublicUrl(bucket, path) {
-    const { data } = supabaseClient.storage.from(bucket).getPublicUrl(path);
-    return data.publicUrl;
-  }
-
-  // Import massif de pièces (arrivées / départs)
-  async function importPiecesFromFiles(files, type) {
-    if (!files || !files.length) return;
-
-    const isEntrant = type === "entrant";
-    const bucket = isEntrant ? BUCKET_ARRIVEES : BUCKET_DEPARTS;
-
-    const mapCourrier = {};
-    ROWS.forEach(r => {
-      const key = r.type + "|" + (r.numero || "").toString().trim();
-      if (r.id) mapCourrier[key] = r.id;
-    });
-
-    const skipped = [];
-
-    for (const file of files) {
-      const m = file.name.match(/(\d+)/);
-      if (!m) {
-        skipped.push(file.name);
-        continue;
-      }
-      const numero = m[1];
-      const key = type + "|" + numero;
-      const courrierId = mapCourrier[key];
-      if (!courrierId) {
-        skipped.push(file.name);
-        continue;
-      }
-
-      const safeName = file.name.replace(/\s+/g, "_");
-      const path = `${numero}_${Date.now()}_${safeName}`;
-
-      const { error: upErr } = await supabaseClient
-        .storage
-        .from(bucket)
-        .upload(path, file, { upsert: true });
-
-      if (upErr) {
-        console.error("Erreur upload pour", file.name, upErr);
-        skipped.push(file.name);
-        continue;
-      }
-
-      const { error: insErr } = await supabaseClient
-        .from("attachments")
-        .insert({
-          courrier_id: courrierId,
-          type,
-          file_name: file.name,
-          bucket,
-          path
-        });
-
-      if (insErr) {
-        console.error("Erreur insert attachment pour", file.name, insErr);
-        skipped.push(file.name);
-        continue;
-      }
-    }
-
-    if (skipped.length) {
-      alert(
-        "Import terminé, mais certaines pièces n'ont pas été reliées (numéro introuvable) :\n\n" +
-        skipped.join("\n")
-      );
+      console.error(error);
+      alert("Pièce jointe : erreur lors de l'envoi vers Supabase.");
     } else {
-      alert("Import des pièces terminé avec succès.");
+      console.log("Pièce jointe envoyée sur", bucket, "->", path);
     }
+  } catch (err) {
+    console.error(err);
+    alert("Pièce jointe : erreur inattendue lors de l'envoi.");
+  }
+}
 
-    await loadRowsFromSupabase();
+async function viewPieces(row) {
+  if (!row || !row.numero) {
+    alert("Aucune pièce jointe (numéro manquant).");
+    return;
   }
 
-  // ==========================
-  //   OUTILS
-  // ==========================
-  function dangerDate(echeance) {
-    if (!echeance) return "";
-    const d = new Date(echeance);
-    const now = new Date();
-    const diff = (d - now) / (1000 * 3600 * 24);
-    if (isNaN(diff)) return "";
-    if (diff < 0) return "bg-red-50";
-    if (diff <= 3) return "bg-amber-50";
-    return "";
+  const isEntrant = row.type === "entrant";
+  const bucket = isEntrant ? BUCKET_ARRIVEES : BUCKET_DEPARTS;
+  const path = `${row.numero}.pdf`;
+
+  const { data } = supabaseClient
+    .storage
+    .from(bucket)
+    .getPublicUrl(path);
+
+  const publicUrl = data && data.publicUrl ? data.publicUrl : null;
+
+  const wrap = document.createElement("div");
+
+  if (!publicUrl) {
+    const msg = document.createElement("div");
+    msg.className = "text-sm text-slate-500";
+    msg.textContent = "Aucune pièce jointe trouvée pour ce courrier.";
+    wrap.appendChild(msg);
+  } else {
+    const label = document.createElement("div");
+    label.className = "mb-2 text-sm font-semibold text-slate-700";
+    label.textContent = `Pièce jointe : ${row.numero}.pdf (${isEntrant ? "Arrivée" : "Départ"})`;
+    wrap.appendChild(label);
+
+    const viewer = document.createElement("div");
+    viewer.className =
+      "border border-slate-200 rounded-xl overflow-hidden bg-white";
+
+    const emb = document.createElement("embed");
+    emb.src = publicUrl;
+    emb.type = "application/pdf";
+    emb.style.width = "100%";
+    emb.style.height = "480px";
+
+    viewer.appendChild(emb);
+    wrap.appendChild(viewer);
   }
 
-  function saveLocal() {
-    // plus utilisé (on garde la fonction pour compatibilité)
+  openModal("Pièce jointe", wrap);
+}
+
+/* ============================
+   STATS
+   ============================ */
+
+function renderStats() {
+  const r = ROWS;
+  const total = r.length;
+  const entrants = r.filter(x => x.type === "entrant").length;
+  const sortants = r.filter(x => x.type === "sortant").length;
+  const enTrait = r.filter(x => x.statut === "En traitement").length;
+  const urg = r.filter(x => x.priorite && x.priorite !== "Normal").length;
+  const late = r.filter(x =>
+    x.echeance && new Date(x.echeance) < new Date()
+  ).length;
+
+  function bloc(label, value) {
+    return `
+      <div class="card flex flex-col gap-1">
+        <div class="text-[10px] uppercase tracking-wide text-slate-500">${label}</div>
+        <div class="text-2xl font-bold text-slate-900">${value}</div>
+      </div>`;
   }
 
-  // ==========================
-  //   STATS
-  // ==========================
-  function renderStats() {
-    const r = ROWS;
-    const total = r.length;
-    const entrants = r.filter(x => x.type === "entrant").length;
-    const sortants = r.filter(x => x.type === "sortant").length;
-    const enTrait = r.filter(x => x.statut === "En traitement").length;
-    const urg = r.filter(x => x.priorite && x.priorite !== "Normal").length;
-    const late = r.filter(x =>
-      x.echeance && new Date(x.echeance) < new Date()
-    ).length;
+  const stats = document.getElementById("stats");
+  if (!stats) return;
 
-    function bloc(label, value){
-      return `
-        <div class="card flex flex-col gap-1">
-          <div class="text-[10px] uppercase tracking-wide text-slate-500">${label}</div>
-          <div class="text-2xl font-bold text-slate-900">${value}</div>
-        </div>`;
-    }
+  stats.innerHTML =
+    bloc("Total", total) +
+    bloc("Entrants", entrants) +
+    bloc("Sortants", sortants) +
+    bloc("En traitement", enTrait) +
+    bloc("Urgents", urg) +
+    bloc("Échéances dépassées", late);
+}
 
-    $("#stats").innerHTML =
-      bloc("Total", total) +
-      bloc("Entrants", entrants) +
-      bloc("Sortants", sortants) +
-      bloc("En traitement", enTrait) +
-      bloc("Urgents", urg) +
-      bloc("Échéances dépassées", late);
+/* ============================
+   TABLEAU
+   ============================ */
+
+function dangerDate(echeance) {
+  if (!echeance) return "";
+  const d = new Date(echeance);
+  const now = new Date();
+  const diff = (d - now) / (1000 * 3600 * 24);
+  if (isNaN(diff)) return "";
+  if (diff < 0) return "bg-red-50";
+  if (diff <= 3) return "bg-amber-50";
+  return "";
+}
+
+function renderTable() {
+  const tb = document.getElementById("tbody");
+  if (!tb) return;
+
+  const fText = ($("#search")?.value || "").toLowerCase();
+  const fType = $("#filterType")?.value || "";
+  const fService = $("#filterService")?.value || "";
+  const fDate = $("#filterDate")?.value || "";
+
+  let rows = ROWS.slice();
+
+  if (fType) {
+    rows = rows.filter(r => r.type === fType);
   }
 
-  // ==========================
-  //   TABLEAU
-  // ==========================
-  function renderTable() {
-    const tb = $("#tbody");
-    const fText = ($("#search").value || "").toLowerCase();
-    const fType = $("#filterType").value || "";
-    const fService = $("#filterService").value || "";
-    const fDate = $("#filterDate").value || "";
+  if (fService) {
+    rows = rows.filter(r => (r.service || "") === fService);
+  }
 
-    let rows = ROWS.slice();
+  if (fDate) {
+    rows = rows.filter(r => (r.date || "") === fDate);
+  }
 
-    if (fType) rows = rows.filter(r => r.type === fType);
-    if (fService) rows = rows.filter(r => r.service === fService);
-    if (fDate) rows = rows.filter(r => r.date === fDate);
+  if (fText) {
+    rows = rows.filter(r => {
+      return (
+        (r.objet || "").toLowerCase().includes(fText) ||
+        (r.numero || "").toLowerCase().includes(fText) ||
+        (r.expediteur || "").toLowerCase().includes(fText) ||
+        (r.destinataire || "").toLowerCase().includes(fText) ||
+        (r.reference || "").toLowerCase().includes(fText)
+      );
+    });
+  }
 
-    if (fText) {
-      rows = rows.filter(r => {
-        return (
-          (r.objet || "").toLowerCase().includes(fText) ||
-          (r.numero || "").toLowerCase().includes(fText) ||
-          (r.expediteur || "").toLowerCase().includes(fText) ||
-          (r.destinataire || "").toLowerCase().includes(fText) ||
-          (r.reference || "").toLowerCase().includes(fText)
-        );
-      });
-    }
+  tb.innerHTML = "";
 
-    tb.innerHTML = "";
+  if (!rows.length) {
+    const tr = document.createElement("tr");
+    const td = document.createElement("td");
+    td.colSpan = 11;
+    td.className = "p-8 text-center text-sm text-slate-500";
+    td.textContent = "Aucun courrier pour l’instant.";
+    tr.appendChild(td);
+    tb.appendChild(tr);
+    return;
+  }
 
-    if (!rows.length) {
-      const tr = document.createElement("tr");
+  rows.forEach(r => {
+    const tr = document.createElement("tr");
+    tr.className = dangerDate(r.echeance);
+
+    function addCell(v) {
       const td = document.createElement("td");
-      td.colSpan = 11;
-      td.className = "p-8 text-center text-sm text-slate-500";
-      td.textContent = "Aucun courrier pour l’instant.";
+      td.className = "tbl-td";
+      td.textContent = v || "";
       tr.appendChild(td);
-      tb.appendChild(tr);
+    }
+
+    addCell(r.type === "entrant" ? "Entrant" : "Sortant");
+    addCell(r.numero || "");
+    addCell(r.date || "");
+    addCell(
+      r.type === "entrant"
+        ? (r.expediteur || "-")
+        : (r.destinataire || "-")
+    );
+    addCell(r.objet || "");
+    addCell(r.service || "");
+    addCell(r.priorite || "");
+    addCell(r.echeance || "-");
+    addCell(r.statut || "");
+
+    // Pièces
+    const tdP = document.createElement("td");
+    tdP.className = "tbl-td no-print";
+    const link = document.createElement("a");
+    link.href = "#";
+    link.textContent = "Voir";
+    link.className = "text-blue-600 underline";
+    link.onclick = ev => { ev.preventDefault(); viewPieces(r); };
+    tdP.appendChild(link);
+    tr.appendChild(tdP);
+
+    // Actions
+    const tdA = document.createElement("td");
+    tdA.className = "tbl-td no-print";
+
+    if (CAN_EDIT) {
+      const e1 = document.createElement("a");
+      e1.href = "#";
+      e1.textContent = "Modifier";
+      e1.className = "text-blue-600 underline mr-3";
+      e1.onclick = ev => { ev.preventDefault(); openForm(r); };
+
+      const e2 = document.createElement("a");
+      e2.href = "#";
+      e2.textContent = "Supprimer";
+      e2.className = "text-red-600 underline";
+      e2.onclick = async ev => {
+        ev.preventDefault();
+        if (confirm("Supprimer ce courrier ?")) {
+          await deleteCourrierFromSupabase(r.id);
+          await loadCourriersFromSupabase();
+        }
+      };
+
+      tdA.appendChild(e1);
+      tdA.appendChild(e2);
+    } else {
+      tdA.textContent = "-";
+      tdA.classList.add("text-slate-400");
+    }
+
+    tr.appendChild(tdA);
+    tb.appendChild(tr);
+  });
+}
+
+function renderAll() {
+  renderStats();
+  renderTable();
+}
+
+/* ============================
+   MODAL GÉNÉRIQUE
+   ============================ */
+
+function openModal(title, contentEl) {
+  const old = document.getElementById("__modal");
+  if (old) old.remove();
+
+  const modal = document.createElement("div");
+  modal.id = "__modal";
+  modal.className = "fixed inset-0 z-50";
+
+  modal.innerHTML = `
+    <div class="absolute inset-0" style="background:#1f2937;opacity:.78;"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-4">
+      <div class="card w-full max-w-6xl max-h-[92vh] overflow-auto bg-slate-50">
+        <div class="flex items-center justify-between gap-3 mb-3">
+          <h3 class="text-lg font-semibold text-slate-900">${title}</h3>
+          <button class="btn btn-ghost" id="btnCloseModal">Fermer</button>
+        </div>
+        <div id="modalContent"></div>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+  const c = document.getElementById("modalContent");
+  c.appendChild(contentEl);
+
+  document.getElementById("btnCloseModal").onclick = () => modal.remove();
+  modal.firstChild.onclick = () => modal.remove();
+}
+
+/* ============================
+   FORMULAIRE NOUVEAU / EDIT
+   ============================ */
+
+function openForm(initial) {
+  if (!CAN_EDIT) return;
+
+  const f = initial
+    ? { ...initial }
+    : {
+        id: null,
+        type: "entrant",
+        numero: "",
+        date: new Date().toISOString().slice(0,10),
+        expediteur: "",
+        destinataire: "",
+        objet: "",
+        instructions: "",
+        service: "",
+        priorite: "Normal",
+        echeance: "",
+        statut: "Reçu",
+        observation: "",
+        reference: ""
+      };
+
+  const grid = document.createElement("div");
+  grid.className = "grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3";
+
+  // Bandeau type
+  const typeBox = document.createElement("div");
+  typeBox.className =
+    "lg:col-span-4 md:col-span-3 border-2 border-blue-300 bg-blue-50 p-3 rounded-xl";
+  typeBox.innerHTML = `
+    <div class="font-semibold text-blue-900 mb-1 text-sm">
+      Type de courrier
+    </div>
+    <div class="flex flex-wrap gap-3">
+      <button type="button" id="btnEntrant" class="btn btn-toggle">
+        Entrant (Arrivée)
+      </button>
+      <button type="button" id="btnSortant" class="btn btn-toggle">
+        Sortant (Départ)
+      </button>
+    </div>
+  `;
+  grid.appendChild(typeBox);
+
+  grid.innerHTML += `
+    <div>
+      <div class="label">N° d'enregistrement</div>
+      <input id="f_numero" class="input" />
+    </div>
+    <div>
+      <div class="label">Date</div>
+      <input id="f_date" type="date" class="input" />
+    </div>
+    <div>
+      <div class="label" id="lblPerson">Expéditeur</div>
+      <input id="f_person" class="input" />
+    </div>
+    <div>
+      <div class="label">Service destinataire</div>
+      <input id="f_service" class="input" />
+    </div>
+    <div>
+      <div class="label">Priorité</div>
+      <select id="f_priorite" class="input">
+        <option>Normal</option>
+        <option>Urgent</option>
+        <option>Très urgent</option>
+      </select>
+    </div>
+    <div>
+      <div class="label">Échéance</div>
+      <input id="f_echeance" type="date" class="input" />
+    </div>
+    <div>
+      <div class="label">Statut</div>
+      <select id="f_statut" class="input">
+        <option>Reçu</option>
+        <option>Enregistré</option>
+        <option>Distribué</option>
+        <option>En traitement</option>
+        <option>Répondu</option>
+        <option>Clos</option>
+      </select>
+    </div>
+    <div class="lg:col-span-4 md:col-span-3">
+      <div class="label">Objet</div>
+      <textarea id="f_objet" class="input input-lg" rows="3"></textarea>
+    </div>
+    <div class="lg:col-span-4 md:col-span-3">
+      <div class="label">Instructions</div>
+      <textarea id="f_instructions" class="input" rows="2"></textarea>
+    </div>
+    <div>
+      <div class="label">Référence</div>
+      <input id="f_reference" class="input" />
+    </div>
+    <div>
+      <div class="label">Observations</div>
+      <input id="f_obs" class="input" />
+    </div>
+    <div class="lg:col-span-4 md:col-span-3">
+      <div class="label">Pièces jointes (PDF)</div>
+      <input id="f_files" type="file" class="input" accept=".pdf" />
+      <div class="mt-2 text-[10px] text-slate-500">
+        Astuce : le fichier sera enregistré dans Supabase avec le nom <strong>NUMERO.pdf</strong>
+        dans le bucket Arrivées ou Départs selon le type.
+      </div>
+    </div>
+  `;
+
+  const actions = document.createElement("div");
+  actions.className =
+    "lg:col-span-4 md:col-span-3 flex justify-end gap-2 mt-2";
+  actions.innerHTML = `
+    <button type="button" class="btn" id="btnCancel">Annuler</button>
+    <button type="button" class="btn btn-primary" id="btnSave">
+      Enregistrer
+    </button>
+  `;
+  grid.appendChild(actions);
+
+  // Sync vers formulaire
+  function syncToForm() {
+    $("#f_numero",grid).value = f.numero || "";
+    $("#f_date",grid).value = f.date || "";
+    $("#f_objet",grid).value = f.objet || "";
+    $("#f_instructions",grid).value = f.instructions || "";
+    $("#f_service",grid).value = f.service || "";
+    $("#f_priorite",grid).value = f.priorite || "Normal";
+    $("#f_echeance",grid).value = f.echeance || "";
+    $("#f_statut",grid).value = f.statut || "Reçu";
+    $("#f_reference",grid).value = f.reference || "";
+    $("#f_obs",grid).value = f.observation || "";
+    $("#f_person",grid).value =
+      (f.type === "entrant" ? f.expediteur : f.destinataire) || "";
+
+    $("#lblPerson",grid).textContent =
+      f.type === "entrant" ? "Expéditeur" : "Destinataire";
+
+    const btnE = $("#btnEntrant",grid);
+    const btnS = $("#btnSortant",grid);
+    btnE.classList.remove("btn-active","btn-inactive");
+    btnS.classList.remove("btn-active","btn-inactive");
+    if (f.type === "entrant") {
+      btnE.classList.add("btn-active");
+      btnS.classList.add("btn-inactive");
+    } else {
+      btnS.classList.add("btn-active");
+      btnE.classList.add("btn-inactive");
+    }
+  }
+
+  grid.addEventListener("input", e => {
+    const id = e.target.id;
+    const v  = e.target.value;
+    if (id === "f_numero") f.numero = v;
+    if (id === "f_date") f.date = v;
+    if (id === "f_objet") f.objet = v;
+    if (id === "f_instructions") f.instructions = v;
+    if (id === "f_reference") f.reference = v;
+    if (id === "f_obs") f.observation = v;
+    if (id === "f_person") {
+      if (f.type === "entrant") f.expediteur = v;
+      else f.destinataire = v;
+    }
+    if (id === "f_echeance") f.echeance = v;
+    if (id === "f_service") f.service = v;
+  });
+
+  grid.addEventListener("change", e => {
+    const id = e.target.id;
+    const v  = e.target.value;
+    if (id === "f_priorite") f.priorite = v;
+    if (id === "f_statut") f.statut = v;
+  });
+
+  grid.addEventListener("click", e => {
+    if (e.target.id === "btnEntrant") {
+      f.type = "entrant";
+      syncToForm();
+    }
+    if (e.target.id === "btnSortant") {
+      f.type = "sortant";
+      syncToForm();
+    }
+  });
+
+  $("#btnCancel",grid).onclick = () => {
+    const m = document.getElementById("__modal");
+    if (m) m.remove();
+  };
+
+  $("#btnSave",grid).onclick = async () => {
+    if (!f.objet || !f.date) {
+      alert("Merci de saisir au minimum la date et l'objet.");
       return;
     }
 
-    rows.forEach(r => {
-      const tr = document.createElement("tr");
-      tr.className = dangerDate(r.echeance);
+    const saved = await saveCourrierToSupabase(f);
+    if (!saved) return;
 
-      function addCell(v){
-        const td = document.createElement("td");
-        td.className = "tbl-td";
-        td.textContent = v || "";
-        tr.appendChild(td);
-      }
+    const fileInput = $("#f_files",grid);
+    await uploadAttachmentIfAny(saved, fileInput);
 
-      addCell(r.type === "entrant" ? "Entrant" : "Sortant");
-      addCell(r.numero || "");
-      addCell(r.date || "");
-      addCell(
-        r.type === "entrant"
-          ? (r.expediteur || "-")
-          : (r.destinataire || "-")
-      );
-      addCell(r.objet || "");
-      addCell(r.service || "");
-      addCell(r.priorite || "");
-      addCell(r.echeance || "-");
-      addCell(r.statut || "");
+    const m = document.getElementById("__modal");
+    if (m) m.remove();
 
-      // Pièces
-      const tdP = document.createElement("td");
-      tdP.className = "tbl-td no-print";
-      if (r.hasAttachments) {
-        const a = document.createElement("a");
-        a.href = "#";
-        a.textContent = "Voir";
-        a.className = "text-blue-600 underline";
-        a.onclick = ev => { ev.preventDefault(); viewPieces(r); };
-        tdP.appendChild(a);
-      } else {
-        tdP.textContent = "-";
-        tdP.classList.add("text-slate-400");
-      }
-      tr.appendChild(tdP);
+    await loadCourriersFromSupabase();
+  };
 
-      // Actions
-      const tdA = document.createElement("td");
-      tdA.className = "tbl-td no-print";
+  syncToForm();
+  openModal(initial ? "Modifier le courrier" : "Nouveau courrier", grid);
+}
 
-      if (CAN_EDIT) {
-        const e1 = document.createElement("a");
-        e1.href = "#";
-        e1.textContent = "Modifier";
-        e1.className = "text-blue-600 underline mr-3";
-        e1.onclick = ev => { ev.preventDefault(); openForm(r); };
+/* ============================
+   BOUTONS GLOBAUX & FILTRES
+   ============================ */
 
-        const e2 = document.createElement("a");
-        e2.href = "#";
-        e2.textContent = "Supprimer";
-        e2.className = "text-red-600 underline";
-        e2.onclick = async ev => {
-          ev.preventDefault();
-          if (confirm("Supprimer ce courrier ?")) {
-            if (r.id) await deleteCourrierInSupabase(r.id);
-            ROWS = ROWS.filter(x => x.id !== r.id);
-            renderAll();
-          }
-        };
+const btnUser = document.getElementById("btnUser");
+if (btnUser) {
+  btnUser.onclick = () => loginUser();
+}
 
-        tdA.appendChild(e1);
-        tdA.appendChild(e2);
-      } else {
-        tdA.textContent = "-";
-        tdA.classList.add("text-slate-400");
-      }
-
-      tr.appendChild(tdA);
-      tb.appendChild(tr);
-    });
-  }
-
-  // ==========================
-  //   MODAL
-  // ==========================
-  function openModal(title, contentEl) {
-    const old = document.getElementById("__modal");
-    if (old) old.remove();
-
-    const modal = document.createElement("div");
-    modal.id = "__modal";
-    modal.className = "fixed inset-0 z-50";
-
-    modal.innerHTML = `
-      <div class="absolute inset-0" style="background:#1f2937;opacity:.78;"></div>
-      <div class="absolute inset-0 flex items-center justify-center p-4">
-        <div class="card w-full max-w-6xl max-h-[92vh] overflow-auto bg-slate-50">
-          <div class="flex items-center justify-between gap-3 mb-3">
-            <h3 class="text-lg font-semibold text-slate-900">${title}</h3>
-            <button class="btn btn-ghost" id="btnCloseModal">Fermer</button>
-          </div>
-          <div id="modalContent"></div>
-        </div>
-      </div>
-    `;
-
-    document.body.appendChild(modal);
-    const c = document.getElementById("modalContent");
-    c.appendChild(contentEl);
-
-    document.getElementById("btnCloseModal").onclick = () => modal.remove();
-    modal.firstChild.onclick = () => modal.remove();
-  }
-
-  // ==========================
-  //   VIEWER PIECES
-  // ==========================
-  async function viewPieces(r) {
-    const wrap = document.createElement("div");
-
-    const attachments = await loadAttachmentsForCourrier(r.id);
-
-    if (attachments && attachments.length) {
-      for (let i = 0; i < attachments.length; i++) {
-        const a = attachments[i];
-
-        const label = document.createElement("div");
-        label.className = "mb-1 text-sm font-semibold text-slate-700";
-        label.textContent = `${i+1}. ${a.name || "Pièce jointe"}`;
-        wrap.appendChild(label);
-
-        const viewer = document.createElement("div");
-        viewer.className =
-          "mb-4 border border-slate-200 rounded-xl overflow-hidden bg-white";
-
-        const url = await getPublicUrl(a.bucket, a.path);
-
-        if (a.name.toLowerCase().endsWith(".pdf")) {
-          const emb = document.createElement("embed");
-          emb.src = url;
-          emb.type = "application/pdf";
-          emb.style.width = "100%";
-          emb.style.height = "480px";
-          viewer.appendChild(emb);
-        } else if (a.name.match(/\.(png|jpe?g|gif|webp)$/i)) {
-          const img = document.createElement("img");
-          img.src = url;
-          img.className = "w-full h-auto";
-          viewer.appendChild(img);
-        } else {
-          const ifr = document.createElement("iframe");
-          ifr.src = url;
-          ifr.style.width = "100%";
-          ifr.style.height = "420px";
-          viewer.appendChild(ifr);
-        }
-
-        wrap.appendChild(viewer);
-      }
-    } else {
-      const empty = document.createElement("div");
-      empty.className = "text-sm text-slate-500";
-      empty.textContent = "Aucune pièce jointe.";
-      wrap.appendChild(empty);
-    }
-
-    openModal("Pièces jointes", wrap);
-  }
-
-  // ==========================
-  //   FORMULAIRE
-  // ==========================
-  async function openForm(initial) {
-    if (!CAN_EDIT) return;
-
-    const f = initial
-      ? JSON.parse(JSON.stringify(initial))
-      : {
-          id: null,
-          type: "entrant",
-          numero: "",
-          date: new Date().toISOString().slice(0,10),
-          expediteur: "",
-          destinataire: "",
-          objet: "",
-          instructions: "",
-          service: SERVICES[0],
-          mode: "Courrier",
-          priorite: "Normal",
-          echeance: "",
-          statut: "Reçu",
-          observation: "",
-          reference: "",
-          attachments: []
-        };
-
-    if (initial && initial.id) {
-      f.attachments = await loadAttachmentsForCourrier(initial.id);
-    } else {
-      f.attachments = [];
-    }
-
-    const grid = document.createElement("div");
-    grid.className = "grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3";
-
-    const typeBox = document.createElement("div");
-    typeBox.className =
-      "lg:col-span-4 md:col-span-3 border-2 border-blue-300 bg-blue-50 p-3 rounded-xl";
-    typeBox.innerHTML = `
-      <div class="font-semibold text-blue-900 mb-1 text-sm">
-        Type de courrier
-      </div>
-      <div class="flex flex-wrap gap-3">
-        <button type="button" id="btnEntrant" class="btn btn-toggle">
-          Entrant (Arrivée)
-        </button>
-        <button type="button" id="btnSortant" class="btn btn-toggle">
-          Sortant (Départ)
-        </button>
-      </div>
-    `;
-    grid.appendChild(typeBox);
-
-    grid.innerHTML += `
-      <div>
-        <div class="label">N° d'enregistrement</div>
-        <input id="f_numero" class="input" />
-      </div>
-      <div>
-        <div class="label">Date</div>
-        <input id="f_date" type="date" class="input" />
-      </div>
-      <div>
-        <div class="label" id="lblPerson">Expéditeur</div>
-        <input id="f_person" class="input" />
-      </div>
-      <div>
-        <div class="label" id="lblService">Service destinataire</div>
-        <select id="f_service" class="input">
-          ${SERVICES.map(s => `<option>${s}</option>`).join("")}
-        </select>
-      </div>
-      <div>
-        <div class="label" id="lblMode">Mode de réception</div>
-        <select id="f_mode" class="input">
-          <option>Courrier</option>
-          <option>Bureau d'Ordre</option>
-          <option>Mail</option>
-          <option>Plateforme (e-Parapheur, Majaliss...)</option>
-          <option>Main propre</option>
-        </select>
-      </div>
-      <div>
-        <div class="label">Priorité</div>
-        <select id="f_priorite" class="input">
-          <option>Normal</option>
-          <option>Urgent</option>
-          <option>Très urgent</option>
-        </select>
-      </div>
-      <div>
-        <div class="label">Échéance</div>
-        <input id="f_echeance" type="date" class="input" />
-      </div>
-      <div>
-        <div class="label">Statut</div>
-        <select id="f_statut" class="input">
-          <option>Reçu</option>
-          <option>Enregistré</option>
-          <option>Distribué</option>
-          <option>En traitement</option>
-          <option>Répondu</option>
-          <option>Clos</option>
-        </select>
-      </div>
-      <div class="lg:col-span-4 md:col-span-3">
-        <div class="label">Objet</div>
-        <textarea id="f_objet" class="input input-lg" rows="3"></textarea>
-      </div>
-      <div class="lg:col-span-4 md:col-span-3">
-        <div class="label">Instructions</div>
-        <textarea id="f_instructions" class="input" rows="2"></textarea>
-      </div>
-      <div>
-        <div class="label">Référence</div>
-        <input id="f_reference" class="input" />
-      </div>
-      <div>
-        <div class="label">Observations</div>
-        <input id="f_obs" class="input" />
-      </div>
-      <div class="lg:col-span-4 md:col-span-3">
-        <div class="label">Pièces jointes (PDF / Images)</div>
-        <input id="f_files" type="file" class="input" multiple
-               accept=".pdf,image/*" />
-        <div id="filesList"
-             class="mt-2 flex flex-wrap gap-2 text-[10px] text-slate-700"></div>
-        <div class="mt-1 text-[10px] text-slate-500">
-          Pour les nouveaux courriers, enregistrer d'abord, puis rouvrir pour ajouter les pièces.
-        </div>
-      </div>
-    `;
-
-    const actions = document.createElement("div");
-    actions.className =
-      "lg:col-span-4 md:col-span-3 flex justify-end gap-2 mt-2";
-    actions.innerHTML = `
-      <button type="button" class="btn" id="btnCancel">Annuler</button>
-      <button type="button" class="btn btn-primary" id="btnSave">
-        Enregistrer
-      </button>
-    `;
-    grid.appendChild(actions);
-
-    function renderFilesList() {
-      const c = $("#filesList", grid);
-      c.innerHTML = "";
-      (f.attachments || []).forEach((a, idx) => {
-        const span = document.createElement("span");
-        span.className =
-          "inline-flex items-center gap-1 border border-slate-200 px-2 py-1 rounded-full bg-white";
-        span.textContent = a.name || ("Pièce " + (idx+1));
-        c.appendChild(span);
-      });
-    }
-
-    function syncToForm() {
-      $("#f_numero",grid).value = f.numero || "";
-      $("#f_date",grid).value = f.date || "";
-      $("#f_objet",grid).value = f.objet || "";
-      $("#f_instructions",grid).value = f.instructions || "";
-      $("#f_service",grid).value = f.service || SERVICES[0];
-      $("#f_mode",grid).value = f.mode || "Courrier";
-      $("#f_priorite",grid).value = f.priorite || "Normal";
-      $("#f_echeance",grid).value = f.echeance || "";
-      $("#f_statut",grid).value = f.statut || "Reçu";
-      $("#f_reference",grid).value = f.reference || "";
-      $("#f_obs",grid).value = f.observation || "";
-
-      $("#f_person",grid).value =
-        (f.type === "entrant" ? f.expediteur : f.destinataire) || "";
-
-      $("#lblPerson",grid).textContent =
-        f.type === "entrant" ? "Expéditeur" : "Destinataire";
-      $("#lblService",grid).textContent =
-        f.type === "entrant" ? "Service destinataire" : "Service expéditeur";
-      $("#lblMode",grid).textContent =
-        f.type === "entrant" ? "Mode de réception" : "Mode d'envoi";
-
-      const btnE = $("#btnEntrant",grid);
-      const btnS = $("#btnSortant",grid);
-      btnE.classList.remove("btn-active","btn-inactive");
-      btnS.classList.remove("btn-active","btn-inactive");
-      if (f.type === "entrant") {
-        btnE.classList.add("btn-active");
-        btnS.classList.add("btn-inactive");
-      } else {
-        btnS.classList.add("btn-active");
-        btnE.classList.add("btn-inactive");
-      }
-
-      renderFilesList();
-    }
-
-    grid.addEventListener("input", e => {
-      const id = e.target.id;
-      const v  = e.target.value;
-      if (id === "f_numero") f.numero = v;
-      if (id === "f_date") f.date = v;
-      if (id === "f_objet") f.objet = v;
-      if (id === "f_instructions") f.instructions = v;
-      if (id === "f_reference") f.reference = v;
-      if (id === "f_obs") f.observation = v;
-      if (id === "f_person") {
-        if (f.type === "entrant") f.expediteur = v;
-        else f.destinataire = v;
-      }
-      if (id === "f_echeance") f.echeance = v;
-    });
-
-    grid.addEventListener("change", e => {
-      const id = e.target.id;
-      const v  = e.target.value;
-      if (id === "f_service") f.service = v;
-      if (id === "f_mode") f.mode = v;
-      if (id === "f_priorite") f.priorite = v;
-      if (id === "f_statut") f.statut = v;
-    });
-
-    grid.addEventListener("click", e => {
-      if (e.target.id === "btnEntrant") {
-        f.type = "entrant";
-        syncToForm();
-      }
-      if (e.target.id === "btnSortant") {
-        f.type = "sortant";
-        syncToForm();
-      }
-    });
-
-    grid.querySelector("#f_files").addEventListener("change", async e => {
-      const files = Array.from(e.target.files || []);
-      if (!files.length) return;
-
-      for (const file of files) {
-        const savedAtt = await uploadAttachmentAndSave(f, file);
-        if (savedAtt) {
-          f.attachments.push(savedAtt);
-          f.hasAttachments = true;
-        }
-      }
-      renderFilesList();
-      e.target.value = "";
-    });
-
-    grid.querySelector("#btnCancel").onclick = () => {
-      const m = document.getElementById("__modal");
-      if (m) m.remove();
-    };
-
-    grid.querySelector("#btnSave").onclick = async () => {
-      if (!f.objet || !f.date) {
-        alert("Merci de saisir au minimum la date et l'objet.");
-        return;
-      }
-
-      const saved = await upsertCourrierInSupabase(f);
-      if (!saved) return;
-
-      f.id = saved.id;
-
-      const idx = ROWS.findIndex(x => x.id === f.id);
-      if (idx >= 0) ROWS[idx] = f;
-      else ROWS.unshift(f);
-
-      const m = document.getElementById("__modal");
-      if (m) m.remove();
-
-      await loadRowsFromSupabase();
-    };
-
-    syncToForm();
-    openModal(initial ? "Modifier le courrier" : "Nouveau courrier", grid);
-  }
-
-  // ==========================
-  //   IMPORT JSON
-  // ==========================
-  function handleImportFile(file) {
-    const reader = new FileReader();
-    reader.onload = async () => {
-      try {
-        const data = JSON.parse(reader.result);
-        if (!Array.isArray(data)) throw new Error("Format attendu : tableau JSON.");
-
-        for (const x of data) {
-          if (!x || typeof x !== "object") continue;
-          const row = {
-            id: x.id || null,
-            type: x.type || "entrant",
-            numero: x.numero || "",
-            date: x.date || null,
-            expediteur: x.expediteur || "",
-            destinataire: x.destinataire || "",
-            objet: x.objet || "",
-            service: x.service || "",
-            priorite: x.priorite || "Normal",
-            echeance: x.echeance || null,
-            statut: x.statut || "Reçu",
-            instructions: x.instructions || "",
-            observation: x.observation || "",
-            reference: x.reference || ""
-          };
-          await upsertCourrierInSupabase(row);
-        }
-
-        await loadRowsFromSupabase();
-        alert("Import terminé.");
-      } catch (err) {
-        alert("Erreur lors de l'import : " + err.message);
-      }
-    };
-    reader.readAsText(file, "utf-8");
-  }
-
-  // ==========================
-  //   BOUTONS GLOBAUX
-  // ==========================
-  document.getElementById("btnUser").onclick = () => loginUser();
-
-  document.getElementById("btnNew").onclick = () => {
+const btnNew = document.getElementById("btnNew");
+if (btnNew) {
+  btnNew.onclick = () => {
     if (CAN_EDIT) openForm(null);
   };
+}
 
-  document.getElementById("btnImport").onclick = () => {
-    if (!CAN_EDIT) return;
-    document.getElementById("fileJson").click();
+const btnImport = document.getElementById("btnImport");
+if (btnImport) {
+  btnImport.onclick = () => {
+    alert("Import JSON désactivé dans cette version (les données viennent de Supabase).");
   };
+}
 
-  document.getElementById("fileJson").addEventListener("change", e => {
-    if (!CAN_EDIT) {
-      e.target.value = "";
-      return;
-    }
-    const f = e.target.files[0];
-    if (f) handleImportFile(f);
-    e.target.value = "";
-  });
+const btnExportPDF = document.getElementById("btnExportPDF");
+if (btnExportPDF) {
+  btnExportPDF.onclick = () => window.print();
+}
 
-  // Import pièces
-  document.getElementById("btnPiecesArrivees").onclick = () => {
-    if (!CAN_EDIT) return;
-    document.getElementById("filePiecesArrivees").click();
-  };
-  document.getElementById("btnPiecesDeparts").onclick = () => {
-    if (!CAN_EDIT) return;
-    document.getElementById("filePiecesDeparts").click();
-  };
+const searchInput = document.getElementById("search");
+if (searchInput) {
+  searchInput.oninput = () => renderAll();
+}
 
-  document.getElementById("filePiecesArrivees").addEventListener("change", e => {
-    if (!CAN_EDIT) {
-      e.target.value = "";
-      return;
-    }
-    const files = Array.from(e.target.files || []);
-    importPiecesFromFiles(files, "entrant");
-    e.target.value = "";
-  });
+const filterType = document.getElementById("filterType");
+if (filterType) {
+  filterType.onchange = () => renderAll();
+}
 
-  document.getElementById("filePiecesDeparts").addEventListener("change", e => {
-    if (!CAN_EDIT) {
-      e.target.value = "";
-      return;
-    }
-    const files = Array.from(e.target.files || []);
-    importPiecesFromFiles(files, "sortant");
-    e.target.value = "";
-  });
+const filterService = document.getElementById("filterService");
+if (filterService) {
+  filterService.onchange = () => renderAll();
+}
 
-  document.getElementById("btnExportPDF").onclick = () => {
-    window.print();
-  };
+const filterDate = document.getElementById("filterDate");
+if (filterDate) {
+  filterDate.onchange = () => renderAll();
+}
 
-  document.getElementById("search").oninput = renderAll;
-  document.getElementById("filterType").onchange = renderAll;
-  document.getElementById("filterService").onchange = renderAll;
-  document.getElementById("filterDate").onchange = renderAll;
+/* ============================
+   AU CHARGEMENT
+   ============================ */
 
-  function renderAll() {
-    renderStats();
-    renderTable();
-  }
-
-  // ==========================
-  //   INIT
-  // ==========================
+(async function init() {
   loginUser();
   if (!CURRENT_USER) {
+    // si l'utilisateur ferme les prompts, on met en consultation
     CURRENT_USER = { name: "consult", canEdit: false };
     applyRole();
   }
-
-  loadRowsFromSupabase();
+  await loadCourriersFromSupabase();
+})();
 </script>
-</body>
-</html>
