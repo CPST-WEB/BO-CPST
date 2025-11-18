@@ -571,7 +571,7 @@
       if (editIndex !== null) {
         courriers[editIndex] = nouveauCourrier;
       } else {
-        courriers.push(nouveauCourrier);
+        courriers.unshift(nouveauCourrier);
       }
 
       saveCourriers();
