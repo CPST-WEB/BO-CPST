@@ -8,217 +8,79 @@
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <style>
-    @media print {
-      #toolbar,
-      #filters,
-      #actions-col,
-      #new-mail-btn,
-      #import-json-btn,
-      #print-btn,
-      #user-switch,
-      #logout-btn {
-        display: none !important;
-      }
-      body {
-        background: white;
-      }
-    }
-  </style>
+  <!-- Supabase JS v2 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="bg-slate-50 text-gray-900 min-h-screen">
+<body class="bg-slate-100 min-h-screen">
 
-  <!-- Barre du haut -->
-  <header class="bg-white shadow-sm sticky top-0 z-30">
-    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between" id="toolbar">
+  <div class="max-w-6xl mx-auto py-6 px-3">
+    <!-- En-tête -->
+    <header class="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <h1 class="text-xl font-semibold">
-          Bureau d'Ordre – <span class="text-indigo-700 font-bold">BO CPST</span>
-        </h1>
-        <p class="text-xs text-gray-500">
-          Suivi des courriers entrants et sortants, stockage des pièces jointes.
-        </p>
+        <h1 class="text-2xl font-bold text-slate-800">Bureau d'Ordre – CPST</h1>
+        <p class="text-sm text-slate-500">Gestion du courrier arrivée / départ avec pièces jointes (Supabase).</p>
       </div>
-      <div class="flex items-center space-x-3 text-sm">
-        <!-- Affichage de l'utilisateur connecté -->
-        <span id="user-switch" class="px-3 py-1 rounded-full bg-slate-100 border text-gray-700">
-          Non connecté
-        </span>
-
-        <button id="logout-btn"
-                class="px-3 py-1.5 rounded-lg bg-slate-100 border text-sm hover:bg-slate-200 hidden">
-          Se déconnecter
-        </button>
-
-        <button id="new-mail-btn"
-                class="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 hidden">
-          Nouveau courrier
-        </button>
-
-        <button id="import-json-btn"
-                class="px-3 py-1.5 rounded-lg bg-slate-100 border text-sm hover:bg-slate-200 hidden">
-          Import JSON
-        </button>
-
-        <button id="print-btn"
-                class="px-3 py-1.5 rounded-lg border border-gray-300 text-sm font-medium hover:bg-gray-100 hidden">
-          Imprimer / PDF
-        </button>
-
-        <input type="file" id="json-file-input" accept="application/json" class="hidden" />
+      <div class="text-xs text-slate-500">
+        <span class="font-semibold">Utilisateur :</span>
+        <span id="currentUserLabel">BUREAU D'ORDRE</span>
       </div>
+    </header>
+
+    <!-- Onglets Arrivée / Départ -->
+    <div class="mb-4 inline-flex rounded-xl bg-white shadow">
+      <button id="tabArrivee"
+              class="px-4 py-2 text-sm font-semibold rounded-xl bg-slate-800 text-white"
+              onclick="setSens('ARRIVEE')">
+        Courrier Arrivée
+      </button>
+      <button id="tabDepart"
+              class="px-4 py-2 text-sm font-semibold rounded-xl text-slate-700"
+              onclick="setSens('DEPART')">
+        Courrier Départ
+      </button>
     </div>
-  </header>
 
-  <main class="max-w-7xl mx-auto px-4 py-4 space-y-6">
+    <!-- Message d'erreur global -->
+    <div id="globalError"
+         class="hidden mb-4 rounded-lg border border-red-300 bg-red-50 px-4 py-2 text-sm text-red-700">
+    </div>
 
-    <!-- Statistiques -->
-    <section class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-center text-xs">
-      <div class="bg-white rounded-lg shadow-sm p-3">
-        <div class="text-gray-500 uppercase tracking-wide">Total</div>
-        <div id="stat-total" class="text-2xl font-bold text-indigo-700">0</div>
-      </div>
-      <div class="bg-white rounded-lg shadow-sm p-3">
-        <div class="text-gray-500 uppercase tracking-wide">Entrants</div>
-        <div id="stat-entrants" class="text-2xl font-bold text-emerald-600">0</div>
-      </div>
-      <div class="bg-white rounded-lg shadow-sm p-3">
-        <div class="text-gray-500 uppercase tracking-wide">Sortants</div>
-        <div id="stat-sortants" class="text-2xl font-bold text-orange-500">0</div>
-      </div>
-      <div class="bg-white rounded-lg shadow-sm p-3">
-        <div class="text-gray-500 uppercase tracking-wide">En traitement</div>
-        <div id="stat-traitement" class="text-2xl font-bold text-sky-600">0</div>
-      </div>
-      <div class="bg-white rounded-lg shadow-sm p-3">
-        <div class="text-gray-500 uppercase tracking-wide">Urgents</div>
-        <div id="stat-urgents" class="text-2xl font-bold text-red-600">0</div>
-      </div>
-      <div class="bg-white rounded-lg shadow-sm p-3">
-        <div class="text-gray-500 uppercase tracking-wide">Échéances dépassées</div>
-        <div id="stat-echues" class="text-2xl font-bold text-rose-600">0</div>
-      </div>
-    </section>
+    <!-- Formulaire -->
+    <section class="mb-6 bg-white rounded-2xl shadow p-4 md:p-6">
+      <h2 class="text-lg font-semibold text-slate-800 mb-3">Nouveau courrier</h2>
 
-    <!-- Filtres -->
-    <section id="filters" class="bg-white rounded-lg shadow-sm p-4 space-y-3 text-sm">
-      <h2 class="font-semibold text-gray-700 mb-2">Filtres et recherche</h2>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <div>
-          <label class="block text-xs text-gray-500 mb-1">
-            Recherche (objet, numéro, expéditeur, destinataire, référence)
-          </label>
-          <input id="search-input" type="text"
-                 class="w-full border rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                 placeholder="Rechercher..." />
-        </div>
+      <form id="courrierForm" class="space-y-4" onsubmit="handleSubmit(event)">
+        <input type="hidden" id="sens" name="sens" value="ARRIVEE" />
 
-        <div>
-          <label class="block text-xs text-gray-500 mb-1">Type de courrier</label>
-          <select id="filter-type"
-                  class="w-full border rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500">
-            <option value="tous">Tous</option>
-            <option value="Entrant">Entrant (Arrivée)</option>
-            <option value="Sortant">Sortant (Départ)</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="block text-xs text-gray-500 mb-1">Service</label>
-          <input id="filter-service" type="text"
-                 class="w-full border rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                 placeholder="Service..." />
-        </div>
-
-        <div>
-          <label class="block text-xs text-gray-500 mb-1">Date exacte</label>
-          <input id="filter-date" type="date"
-                 class="w-full border rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500" />
-        </div>
-      </div>
-    </section>
-
-    <!-- Tableau des courriers -->
-    <section class="bg-white rounded-lg shadow-sm overflow-hidden">
-      <div class="overflow-x-auto">
-        <table class="min-w-full text-sm">
-          <thead class="bg-slate-900 text-white text-xs uppercase tracking-wide">
-            <tr>
-              <th class="px-4 py-2 w-20 text-left">Type</th>
-              <th class="px-4 py-2 w-16 text-left">N°</th>
-              <th class="px-4 py-2 w-24 text-left">Date</th>
-              <th class="px-4 py-2 w-40 text-left">Expéditeur / Destinataire</th>
-              <th class="px-4 py-2 w-72 text-left">Objet</th>
-              <th class="px-4 py-2 w-32 text-left">Service</th>
-              <th class="px-4 py-2 w-24 text-left">Priorité</th>
-              <th class="px-4 py-2 w-28 text-left">Échéance</th>
-              <th class="px-4 py-2 w-28 text-left">Statut</th>
-              <th class="px-4 py-2 w-24 text-center">Pièce jointe</th>
-              <th class="px-4 py-2 w-40 text-right" id="actions-col">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="courriers-body" class="divide-y divide-gray-100 bg-white">
-          </tbody>
-        </table>
-      </div>
-    </section>
-  </main>
-
-  <!-- MODAL COURRIER -->
-  <div id="modal-overlay"
-       class="fixed inset-0 bg-black/40 flex items-center justify-center z-40 hidden">
-    <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-      <div class="flex items-center justify-between px-5 py-3 border-b">
-        <h2 id="modal-title" class="text-lg font-semibold">Nouveau courrier</h2>
-        <button id="modal-close"
-                class="text-sm text-gray-500 hover:text-gray-800">
-          Fermer ✕
-        </button>
-      </div>
-
-      <form id="courrier-form" class="px-5 py-4 space-y-4">
-        <!-- Type -->
-        <div class="bg-slate-50 border rounded-lg px-4 py-3">
-          <label class="block text-xs font-semibold text-gray-600 mb-2">
-            Type de courrier
-          </label>
-          <div class="flex items-center space-x-6 text-sm">
-            <label class="inline-flex items-center space-x-1">
-              <input type="radio" name="courrier-type" id="type-entrant" value="Entrant" checked />
-              <span>Entrant (Arrivée)</span>
+        <!-- Ligne 1 : Numéro, Date, Service -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">
+              N° d'ordre <span class="text-red-500">*</span>
             </label>
-            <label class="inline-flex items-center space-x-1">
-              <input type="radio" name="courrier-type" id="type-sortant" value="Sortant" />
-              <span>Sortant (Départ)</span>
-            </label>
+            <input id="numero" name="numero" type="text" required
+                   class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500"
+                   placeholder="Saisir le numéro d'ordre (unique par type)" />
           </div>
-        </div>
 
-        <!-- Ligne 1 -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
           <div>
-            <label class="block text-xs text-gray-500 mb-1">N° d'enregistrement</label>
-            <input id="numero-input" type="text"
-                   class="w-full border rounded-md px-2 py-1.5" required />
+            <label class="block text-xs font-semibold text-slate-600 mb-1">
+              Date du courrier <span class="text-red-500">*</span>
+            </label>
+            <input id="date_courrier" name="date_courrier" type="date" required
+                   class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500" />
           </div>
+
           <div>
-            <label class="block text-xs text-gray-500 mb-1">Date</label>
-            <input id="date-input" type="date"
-                   class="w-full border rounded-md px-2 py-1.5" required />
-          </div>
-          <div>
-            <label class="block text-xs text-gray-500 mb-1">Expéditeur / Destinataire</label>
-            <input id="expediteur-input" type="text"
-                   class="w-full border rounded-md px-2 py-1.5" required />
-          </div>
-          <div>
-            <label class="block text-xs text-gray-500 mb-1">Service</label>
-            <select id="service-input"
-                    class="w-full border rounded-md px-2 py-1.5">
-              <option value="">--</option>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">
+              Service concerné <span class="text-red-500">*</span>
+            </label>
+            <select id="service" name="service" required
+                    class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500">
+              <option value="">-- Choisir --</option>
               <option value="DGS">DGS</option>
               <option value="SECRETARIAT">SECRETARIAT</option>
-              <option value="PRESIDENT">PRESIDENT</option>
+              <option value="PRESIDENCE">PRESIDENCE</option>
               <option value="SMCSC">SMCSC</option>
               <option value="DAPC">DAPC</option>
               <option value="SATDE">SATDE</option>
@@ -231,744 +93,391 @@
           </div>
         </div>
 
-        <!-- Ligne 2 -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-          <div>
-            <label class="block text-xs text-gray-500 mb-1">Priorité</label>
-            <select id="priorite-input"
-                    class="w-full border rounded-md px-2 py-1.5">
-              <option value="Normal">Normal</option>
-              <option value="Urgent">Urgent</option>
-              <option value="Très urgent">Très urgent</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs text-gray-500 mb-1">Échéance</label>
-            <input id="echeance-input" type="date"
-                   class="w-full border rounded-md px-2 py-1.5" />
-          </div>
-          <div>
-            <label class="block text-xs text-gray-500 mb-1">Statut</label>
-            <select id="statut-input"
-                    class="w-full border rounded-md px-2 py-1.5">
-              <option value="Reçu">Reçu</option>
-              <option value="En cours">En cours</option>
-              <option value="Clôturé">Clôturé</option>
-            </select>
-          </div>
+        <!-- Ligne 2 : Objet -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">
+            Objet <span class="text-red-500">*</span>
+          </label>
+          <input id="objet" name="objet" type="text" required
+                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500"
+                 placeholder="Objet du courrier" />
         </div>
 
-        <!-- Objet / Instructions -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-          <div>
-            <label class="block text-xs text-gray-500 mb-1">Objet</label>
-            <textarea id="objet-input" rows="3"
-                      class="w-full border rounded-md px-2 py-1.5" required></textarea>
-          </div>
-          <div>
-            <label class="block text-xs text-gray-500 mb-1">Instructions</label>
-            <textarea id="instructions-input" rows="3"
-                      class="w-full border rounded-md px-2 py-1.5"></textarea>
-          </div>
+        <!-- Ligne 3 : Expéditeur / Destinataire -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">
+            Expéditeur / Destinataire <span class="text-red-500">*</span>
+          </label>
+          <input id="exp_dest" name="exp_dest" type="text" required
+                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500"
+                 placeholder="Nom de l'expéditeur ou du destinataire" />
         </div>
 
-        <!-- Référence / Observations -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-          <div>
-            <label class="block text-xs text-gray-500 mb-1">Référence</label>
-            <input id="reference-input" type="text"
-                   class="w-full border rounded-md px-2 py-1.5" />
-          </div>
-          <div>
-            <label class="block text-xs text-gray-500 mb-1">Observations</label>
-            <input id="observations-input" type="text"
-                   class="w-full border rounded-md px-2 py-1.5" />
-          </div>
+        <!-- Ligne 4 : Observations -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">
+            Observations
+          </label>
+          <textarea id="observations" name="observations" rows="2"
+                    class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500"
+                    placeholder="Remarques, instructions, etc."></textarea>
         </div>
 
-        <!-- Pièce jointe -->
-        <div class="text-sm">
-          <label class="block text-xs text-gray-500 mb-1">Pièces jointes (PDF)</label>
-          <input id="piece-jointe-input" type="file" accept=".pdf"
-                 class="block w-full text-sm text-gray-700" />
-          <p class="mt-1 text-xs text-gray-500">
-            Le fichier sera enregistré avec le nom
-            <strong>NUMERO.pdf</strong> dans le bucket <strong>Arrivee</strong> ou
-            <strong>Depart</strong>.
-          </p>
+        <!-- Ligne 5 : Pièce jointe -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">
+              Pièce jointe (PDF, image, …)
+            </label>
+            <input id="pj" type="file"
+                   class="w-full text-sm text-slate-600
+                          file:mr-2 file:rounded-lg file:border-0
+                          file:bg-slate-800 file:px-3 file:py-1.5 file:text-sm file:font-semibold
+                          file:text-white hover:file:bg-slate-700" />
+          </div>
+
+          <div class="text-xs text-slate-500">
+            <p>• Pour le courrier <strong>ARRIVEE</strong>, les PJ vont dans le bucket <code>bo_pj_arr</code>.</p>
+            <p>• Pour le courrier <strong>DEPART</strong>, les PJ vont dans le bucket <code>bo_pj_dep</code>.</p>
+          </div>
         </div>
 
         <!-- Boutons -->
-        <div class="flex justify-end space-x-3 pt-3 border-t mt-2">
-          <button type="button" id="modal-cancel"
-                  class="px-4 py-2 rounded-lg border text-sm hover:bg-gray-100">
-            Annuler
-          </button>
+        <div class="flex items-center gap-3 pt-2">
           <button type="submit"
-                  class="px-4 py-2 rounded-lg bg-indigo-600 text-sm font-semibold text-white hover:bg-indigo-700">
-            Enregistrer
+                  id="btnSave"
+                  class="inline-flex items-center gap-2 rounded-xl bg-slate-800 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-60 disabled:cursor-not-allowed">
+            <span>Enregistrer</span>
+            <span id="spinner" class="hidden animate-spin border-2 border-white border-r-transparent rounded-full h-4 w-4"></span>
+          </button>
+          <button type="button"
+                  onclick="resetForm()"
+                  class="text-xs text-slate-500 hover:text-slate-700">
+            Vider le formulaire
           </button>
         </div>
       </form>
-    </div>
-  </div>
+    </section>
 
-  <!-- MODAL CONNEXION (OBLIGATOIRE) -->
-  <div id="login-modal"
-       class="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
-      <h2 class="text-lg font-semibold mb-4 text-center">
-        Connexion – <span class="text-indigo-700 font-bold">BO CPST</span>
-      </h2>
-      <p class="text-xs text-gray-500 mb-4 text-center">
-        Sélectionnez votre profil et saisissez votre mot de passe.
-      </p>
-
-      <div class="space-y-3 text-sm">
-        <div>
-          <label class="block text-xs text-gray-500 mb-1">Utilisateur</label>
-          <select id="login-user-select"
-                  class="w-full border rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500">
-            <option value="">-- Sélectionner --</option>
-            <option value="BO">BO (Bureau d'Ordre)</option>
-            <option value="PRESIDENT">PRESIDENT</option>
-            <option value="DGS">DGS</option>
-            <option value="SECRETARIAT">SECRETARIAT</option>
-            <option value="SAFP">SAFP</option>
-            <option value="SATDE">SATDE</option>
-            <option value="SMCSC">SMCSC</option>
-            <option value="DAPC">DAPC</option>
-            <option value="SRHAJ">SRHAJ</option>
-            <option value="BGA">BGA</option>
-            <option value="BGPA">BGPA</option>
-            <option value="BIN">BIN</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="block text-xs text-gray-500 mb-1">Mot de passe</label>
-          <input id="login-password" type="password"
-                 class="w-full border rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                 placeholder="Mot de passe" />
-        </div>
-
-        <div class="pt-2 flex justify-end space-x-3">
-          <button id="login-submit-btn"
-                  class="px-4 py-2 rounded-lg bg-indigo-600 text-sm font-semibold text-white hover:bg-indigo-700">
-            Se connecter
-          </button>
-        </div>
-
-        <p class="text-[11px] text-gray-400 mt-2">
-          Accès :
-          <br>• BO → <strong>BO2025!</strong>
-          <br>• PRESIDENT → <strong>PRS2025!</strong>
-          <br>• Services → <strong>NOMSERVICE2025!</strong> (ex : DGS2025!, SAFP2025!)
-        </p>
+    <!-- Liste des courriers -->
+    <section class="bg-white rounded-2xl shadow p-4 md:p-6">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-lg font-semibold text-slate-800">
+          Liste des courriers <span id="labelListe">Arrivée</span>
+        </h2>
+        <span id="countBadge"
+              class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+          0 enreg.
+        </span>
       </div>
-    </div>
+
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-xs border border-slate-200 rounded-lg overflow-hidden">
+          <thead class="bg-slate-100 text-slate-700">
+            <tr>
+              <th class="px-2 py-2 text-left">N°</th>
+              <th class="px-2 py-2 text-left">Date</th>
+              <th class="px-2 py-2 text-left">Service</th>
+              <th class="px-2 py-2 text-left">Objet</th>
+              <th class="px-2 py-2 text-left">Exp./Dest.</th>
+              <th class="px-2 py-2 text-center">PJ</th>
+              <th class="px-2 py-2 text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="courriersBody" class="divide-y divide-slate-100 bg-white">
+            <!-- lignes générées en JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
   </div>
 
-  <!-- Supabase JS -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
+  <!-- ====================== SCRIPT JS ====================== -->
   <script>
-    /* ========= SUPABASE ========= */
-    const { createClient } = supabase;
+    // ========= CONFIG SUPABASE =========
     const SUPABASE_URL = "https://ltymaadmjdqpvmpjbxbr.supabase.co";
-    const SUPABASE_ANON_KEY =
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx0eW1hYWRtamRxcHZtcGpieGJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxNTUxMjYsImV4cCI6MjA3ODczMTEyNn0.K7f-eB2mVd-2lomo9-qI4xWW7X3sFDOzx1ukB4OAgmo";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx0eW1hYWRtamRxcHZtcGpieGJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxNTUxMjYsImV4cCI6MjA3ODczMTEyNn0.K7f-eB2mVd-2lomo9-qI4xWW7X3sFDOzx1ukB4OAgmo";
 
-    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const TABLE_NAME = "bo_courrier"; // 👉 adapte au nom réel de ta table
+    const BUCKET_ARR = "bo_pj_arr";
+    const BUCKET_DEP = "bo_pj_dep";
 
-    // ⚠️ NOMS DES BUCKETS (doivent exister dans Supabase)
-    const BUCKET_ARRIVEES = "Arrivee";
-    const BUCKET_DEPARTS = "Depart";
+    const { createClient } = supabase;
+    const supa = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    /* ========= DONNÉES ========= */
-    let courriers = [];
-    let editIndex = null;
-    const STORAGE_KEY = "bo_cpst_courriers";
+    // ========= ÉTAT COURANT =========
+    let currentSens = "ARRIVEE"; // ARRIVEE ou DEPART
+    let isSaving = false;
 
-    function loadCourriers() {
-      const data = localStorage.getItem(STORAGE_KEY);
-      courriers = data ? JSON.parse(data) : [];
-    }
-
-    function saveCourriers() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(courriers));
-    }
-
-    /* ========= GESTION UTILISATEURS & RÔLES ========= */
-
-    const ROLES = {
-      BO_ADMIN: "BO_ADMIN",
-      PRESIDENT: "PRESIDENT",
-      SERVICE: "SERVICE",
-    };
-
-    // Définition des comptes
-    const USERS = {
-      BO: {
-        label: "Bureau d'Ordre (Admin)",
-        password: "BO2025!",
-        role: ROLES.BO_ADMIN,
-        service: null,
-      },
-      PRESIDENT: {
-        label: "Président",
-        password: "PRS2025!",
-        role: ROLES.PRESIDENT,
-        service: null,
-      },
-      DGS: {
-        label: "DGS",
-        password: "DGS2025!",
-        role: ROLES.SERVICE,
-        service: "DGS",
-      },
-      SECRETARIAT: {
-        label: "SECRETARIAT",
-        password: "SECRETARIAT2025!",
-        role: ROLES.SERVICE,
-        service: "SECRETARIAT",
-      },
-      SAFP: {
-        label: "SAFP",
-        password: "SAFP2025!",
-        role: ROLES.SERVICE,
-        service: "SAFP",
-      },
-      SATDE: {
-        label: "SATDE",
-        password: "SATDE2025!",
-        role: ROLES.SERVICE,
-        service: "SATDE",
-      },
-      SMCSC: {
-        label: "SMCSC",
-        password: "SMCSC2025!",
-        role: ROLES.SERVICE,
-        service: "SMCSC",
-      },
-      DAPC: {
-        label: "DAPC",
-        password: "DAPC2025!",
-        role: ROLES.SERVICE,
-        service: "DAPC",
-      },
-      SRHAJ: {
-        label: "SRHAJ",
-        password: "SRHAJ2025!",
-        role: ROLES.SERVICE,
-        service: "SRHAJ",
-      },
-      BGA: {
-        label: "BGA",
-        password: "BGA2025!",
-        role: ROLES.SERVICE,
-        service: "BGA",
-      },
-      BGPA: {
-        label: "BGPA",
-        password: "BGPA2025!",
-        role: ROLES.SERVICE,
-        service: "BGPA",
-      },
-      BIN: {
-        label: "BIN",
-        password: "BIN2025!",
-        role: ROLES.SERVICE,
-        service: "BIN",
-      },
-    };
-
-    let currentUser = null;
-
-    // Charger utilisateur depuis le localStorage (si déjà connecté)
-    const savedUser = localStorage.getItem("boCurrentUser");
-    if (savedUser) {
-      try {
-        currentUser = JSON.parse(savedUser);
-      } catch (e) {
-        currentUser = null;
-      }
-    }
-
-    function getLoginModal() {
-      return document.getElementById("login-modal");
-    }
-
-    function showLoginModal() {
-      const modal = getLoginModal();
-      if (modal) modal.classList.remove("hidden");
-    }
-
-    function hideLoginModal() {
-      const modal = getLoginModal();
-      if (modal) modal.classList.add("hidden");
-    }
-
-    function applyRoleRules() {
-      const userSwitch = document.getElementById("user-switch");
-      const logoutBtn = document.getElementById("logout-btn");
-      const newMailBtn = document.getElementById("new-mail-btn");
-      const importJsonBtn = document.getElementById("import-json-btn");
-      const printBtn = document.getElementById("print-btn");
-
-      if (!currentUser) {
-        // Pas connecté : bloquer tout
-        showLoginModal();
-        if (userSwitch) userSwitch.textContent = "Non connecté";
-        if (logoutBtn) logoutBtn.classList.add("hidden");
-        if (newMailBtn) newMailBtn.classList.add("hidden");
-        if (importJsonBtn) importJsonBtn.classList.add("hidden");
-        if (printBtn) printBtn.classList.add("hidden");
+    // ========= UTILITAIRES UI =========
+    function showError(msg) {
+      const box = document.getElementById("globalError");
+      if (!msg) {
+        box.classList.add("hidden");
+        box.textContent = "";
         return;
       }
-
-      // Connecté
-      hideLoginModal();
-
-      const label =
-        (currentUser.label || currentUser.username) +
-        " — rôle : " +
-        currentUser.role +
-        (currentUser.service ? " / " + currentUser.service : "");
-
-      if (userSwitch) userSwitch.textContent = "Connecté : " + label;
-      if (logoutBtn) logoutBtn.classList.remove("hidden");
-
-      // Seul BO_ADMIN peut créer / importer
-      if (currentUser.role === ROLES.BO_ADMIN) {
-        if (newMailBtn) newMailBtn.classList.remove("hidden");
-        if (importJsonBtn) importJsonBtn.classList.remove("hidden");
-      } else {
-        if (newMailBtn) newMailBtn.classList.add("hidden");
-        if (importJsonBtn) importJsonBtn.classList.add("hidden");
-      }
-
-      // Impression autorisée à tous les rôles connectés
-      if (printBtn) printBtn.classList.remove("hidden");
+      box.textContent = msg;
+      box.classList.remove("hidden");
     }
 
-    function getVisibleCourriers() {
-      if (!currentUser) {
-        return [];
-      }
-
-      // BO et PRESIDENT voient tout
-      if (
-        currentUser.role === ROLES.BO_ADMIN ||
-        currentUser.role === ROLES.PRESIDENT
-      ) {
-        return courriers;
-      }
-
-      // Services : uniquement leurs courriers
-      if (
-        currentUser.role === ROLES.SERVICE &&
-        currentUser.service &&
-        currentUser.service !== ""
-      ) {
-        return courriers.filter((c) => (c.service || "").toUpperCase() === currentUser.service);
-      }
-
-      return [];
+    function setLoading(loading) {
+      isSaving = loading;
+      document.getElementById("btnSave").disabled = loading;
+      const spinner = document.getElementById("spinner");
+      if (loading) spinner.classList.remove("hidden");
+      else spinner.classList.add("hidden");
     }
 
-    function login() {
-      const select = document.getElementById("login-user-select");
-      const passwordInput = document.getElementById("login-password");
-      if (!select || !passwordInput) return;
-
-      const username = (select.value || "").toUpperCase();
-      const password = passwordInput.value;
-
-      if (!username) {
-        alert("Veuillez sélectionner un utilisateur.");
-        return;
-      }
-
-      const user = USERS[username];
-      if (!user || user.password !== password) {
-        alert("Utilisateur ou mot de passe incorrect.");
-        return;
-      }
-
-      currentUser = {
-        username,
-        label: user.label,
-        role: user.role,
-        service: user.service,
-      };
-
-      localStorage.setItem("boCurrentUser", JSON.stringify(currentUser));
-      passwordInput.value = "";
-
-      applyRoleRules();
-      renderTable();
-
-      alert("Connecté en tant que " + (user.label || username));
-    }
-
-    function logout() {
-      currentUser = null;
-      localStorage.removeItem("boCurrentUser");
-      applyRoleRules();
-      renderTable();
-    }
-
-    /* ========= STATS ========= */
-    function computeStats() {
-      const visible = getVisibleCourriers();
-      const total = visible.length;
-      const entrants = visible.filter(c => c.type === "Entrant").length;
-      const sortants = visible.filter(c => c.type === "Sortant").length;
-      const enTraitement = visible.filter(c => c.statut === "En cours").length;
-      const urgents = visible.filter(c => (c.priorite || "").toLowerCase().includes("urgent"));
+    function resetForm() {
+      document.getElementById("courrierForm").reset();
+      document.getElementById("sens").value = currentSens;
       const today = new Date().toISOString().slice(0, 10);
-      const echues = visible.filter(c => c.echeance && c.echeance < today && c.statut !== "Clôturé");
-
-      document.getElementById("stat-total").textContent = total;
-      document.getElementById("stat-entrants").textContent = entrants;
-      document.getElementById("stat-sortants").textContent = sortants;
-      document.getElementById("stat-traitement").textContent = enTraitement;
-      document.getElementById("stat-urgents").textContent = urgents.length;
-      document.getElementById("stat-echues").textContent = echues.length;
+      document.getElementById("date_courrier").value = today;
     }
 
-    /* ========= TABLEAU ========= */
-    function renderTable() {
-      const tbody = document.getElementById("courriers-body");
-      if (!tbody) return;
+    function setSens(sens) {
+      currentSens = sens;
+      document.getElementById("sens").value = sens;
 
+      const tabArr = document.getElementById("tabArrivee");
+      const tabDep = document.getElementById("tabDepart");
+      const labelListe = document.getElementById("labelListe");
+
+      if (sens === "ARRIVEE") {
+        tabArr.classList.add("bg-slate-800", "text-white");
+        tabArr.classList.remove("text-slate-700", "bg-white");
+        tabDep.classList.remove("bg-slate-800", "text-white");
+        tabDep.classList.add("text-slate-700", "bg-white");
+        labelListe.textContent = "Arrivée";
+      } else {
+        tabDep.classList.add("bg-slate-800", "text-white");
+        tabDep.classList.remove("text-slate-700", "bg-white");
+        tabArr.classList.remove("bg-slate-800", "text-white");
+        tabArr.classList.add("text-slate-700", "bg-white");
+        labelListe.textContent = "Départ";
+      }
+
+      loadCourriers();
+    }
+
+    function updateCount(count) {
+      document.getElementById("countBadge").textContent = count + " enreg.";
+    }
+
+    // ========= CHARGER LA LISTE =========
+    async function loadCourriers() {
+      showError("");
+      const tbody = document.getElementById("courriersBody");
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" class="px-3 py-3 text-center text-xs text-slate-400">
+            Chargement en cours...
+          </td>
+        </tr>
+      `;
+
+      const { data, error } = await supa
+        .from(TABLE_NAME)
+        .select("*")
+        .eq("sens", currentSens)
+        .order("date_courrier", { ascending: false });
+
+      if (error) {
+        console.error(error);
+        showError("Erreur lors du chargement des courriers : " + error.message);
+        tbody.innerHTML = "";
+        updateCount(0);
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="px-3 py-3 text-center text-xs text-slate-400">
+              Aucun courrier trouvé.
+            </td>
+          </tr>
+        `;
+        updateCount(0);
+        return;
+      }
+
+      updateCount(data.length);
       tbody.innerHTML = "";
 
-      const search = document.getElementById("search-input").value.trim().toLowerCase();
-      const typeFilter = document.getElementById("filter-type").value;
-      const serviceFilter = document.getElementById("filter-service").value.trim().toLowerCase();
-      const dateFilter = document.getElementById("filter-date").value;
+      for (const row of data) {
+        // Adapter aux noms de colonnes de TA table
+        const numero = row.numero || row.numero_ordre || "";
+        const dateC = row.date_courrier || row.date || "";
+        const service = row.service || "";
+        const objet = row.objet || "";
+        const expDest = row.exp_dest || row.expediteur_destinataire || "";
+        const pjUrl = row.pj_url || row.pj || null;
+        const bucket = row.sens === "ARRIVEE" ? BUCKET_ARR : BUCKET_DEP;
 
-      const visibleCourriers = getVisibleCourriers();
+        // Construction URL publique si on a un chemin PJ
+        let pjLinkHtml = "-";
+        if (pjUrl) {
+          const { data: pub, error: pubErr } = supa
+            .storage
+            .from(bucket)
+            .getPublicUrl(pjUrl);
 
-      visibleCourriers.forEach((c, index) => {
-        if (typeFilter !== "tous" && c.type !== typeFilter) return;
-        if (serviceFilter && !(c.service || "").toLowerCase().includes(serviceFilter)) return;
-        if (dateFilter && c.date !== dateFilter) return;
-
-        if (search) {
-          const combined =
-            (c.objet || "") + " " +
-            (c.numero || "") + " " +
-            (c.expediteur || "") + " " +
-            (c.reference || "") + " " +
-            (c.service || "");
-          if (!combined.toLowerCase().includes(search)) return;
+          if (!pubErr && pub && pub.publicUrl) {
+            pjLinkHtml = `<a href="${pub.publicUrl}" target="_blank" class="text-xs text-slate-700 underline">Ouvrir</a>`;
+          }
         }
 
         const tr = document.createElement("tr");
-        tr.className = "hover:bg-slate-50";
-
-        const urgentBadge = (c.priorite || "").toLowerCase().includes("urgent")
-          ? '<span class="inline-flex items-center px-2 py-0.5 text-[10px] font-semibold rounded-full bg-red-100 text-red-700">Urgent</span>'
-          : "";
-
-        const pjLabel = c.pieceJointeUrl
-          ? '<button class="px-2 py-1 text-xs rounded-full bg-slate-100 text-gray-800 hover:bg-slate-200" onclick="voirPieceJointe(' + "'" + c.pieceJointeUrl + "'" + ')">Voir</button>'
-          : '<span class="text-xs text-gray-400">Aucune</span>';
-
-        // Colonne actions : selon rôle
-        let actionsHtml = "";
-        if (currentUser && currentUser.role === ROLES.BO_ADMIN) {
-          actionsHtml = `
-            <div class="inline-flex space-x-2">
-              <button class="px-2 py-1 text-xs rounded-full bg-blue-600 text-white hover:bg-blue-700"
-                      onclick="ouvrirEdition(${index})">
-                Modifier
-              </button>
-              <button class="px-2 py-1 text-xs rounded-full bg-red-600 text-white hover:bg-red-700"
-                      onclick="supprimerCourrier(${index})">
-                Supprimer
-              </button>
-            </div>
-          `;
-        }
 
         tr.innerHTML = `
-          <td class="px-4 py-2 w-20">${c.type}</td>
-          <td class="px-4 py-2 w-16">${c.numero || ""}</td>
-          <td class="px-4 py-2 w-24">${c.date || ""}</td>
-          <td class="px-4 py-2 w-40 truncate" title="${c.expediteur || ""}">
-            ${c.expediteur || ""}
+          <td class="px-2 py-2 align-top">${numero}</td>
+          <td class="px-2 py-2 align-top">${dateC || ""}</td>
+          <td class="px-2 py-2 align-top">${service}</td>
+          <td class="px-2 py-2 align-top max-w-xs">
+            <div class="line-clamp-2">${objet}</div>
           </td>
-          <td class="px-4 py-2 w-72 truncate" title="${c.objet || ""}">
-            ${c.objet || ""} ${urgentBadge}
+          <td class="px-2 py-2 align-top max-w-xs">
+            <div class="line-clamp-2">${expDest}</div>
           </td>
-          <td class="px-4 py-2 w-32 truncate" title="${c.service || ""}">
-            ${c.service || ""}
+          <td class="px-2 py-2 align-top text-center">
+            ${pjLinkHtml}
           </td>
-          <td class="px-4 py-2 w-24">${c.priorite || ""}</td>
-          <td class="px-4 py-2 w-28">${c.echeance || ""}</td>
-          <td class="px-4 py-2 w-28">${c.statut || ""}</td>
-          <td class="px-4 py-2 w-24 text-center">
-            ${pjLabel}
-          </td>
-          <td class="px-4 py-2 w-40 text-right">
-            ${actionsHtml}
+          <td class="px-2 py-2 align-top text-center">
+            <button class="text-[11px] text-red-600 hover:underline"
+                    onclick="deleteCourrier('${row.id}')">
+              Supprimer
+            </button>
           </td>
         `;
+
         tbody.appendChild(tr);
-      });
-
-      computeStats();
-    }
-
-    /* ========= MODAL COURRIER ========= */
-    const modalOverlay = document.getElementById("modal-overlay");
-    const modalTitle = document.getElementById("modal-title");
-    const courrierForm = document.getElementById("courrier-form");
-
-    function openModal(nouveau = true) {
-      if (!currentUser || currentUser.role !== ROLES.BO_ADMIN) {
-        alert("Seul le Bureau d'Ordre (BO) peut créer ou modifier un courrier.");
-        return;
-      }
-      modalTitle.textContent = nouveau ? "Nouveau courrier" : "Modifier le courrier";
-      modalOverlay.classList.remove("hidden");
-    }
-
-    function closeModal() {
-      modalOverlay.classList.add("hidden");
-      courrierForm.reset();
-      editIndex = null;
-    }
-
-    function remplirFormulaire(c) {
-      document.getElementById("numero-input").value = c.numero || "";
-      document.getElementById("date-input").value = c.date || "";
-      document.getElementById("expediteur-input").value = c.expediteur || "";
-      document.getElementById("service-input").value = c.service || "";
-      document.getElementById("priorite-input").value = c.priorite || "Normal";
-      document.getElementById("echeance-input").value = c.echeance || "";
-      document.getElementById("statut-input").value = c.statut || "Reçu";
-      document.getElementById("objet-input").value = c.objet || "";
-      document.getElementById("instructions-input").value = c.instructions || "";
-      document.getElementById("reference-input").value = c.reference || "";
-      document.getElementById("observations-input").value = c.observations || "";
-
-      if (c.type === "Sortant") {
-        document.getElementById("type-sortant").checked = true;
-      } else {
-        document.getElementById("type-entrant").checked = true;
       }
     }
 
-    /* ========= PIÈCE JOINTE ========= */
-    async function uploadPieceJointe(numero, typeCourrier, file, existingUrl = null) {
-      if (!file) return existingUrl || null;
+    // ========= ENREGISTRER =========
+    async function handleSubmit(event) {
+      event.preventDefault();
+      if (isSaving) return;
 
-      const bucketName = typeCourrier === "Entrant" ? BUCKET_ARRIVEES : BUCKET_DEPARTS;
-      const parts = file.name.split(".");
-      const ext = parts.length > 1 ? parts.pop().toLowerCase() : "pdf";
-      const path = `${numero}.${ext}`;
+      showError("");
 
-      const { data, error } = await supabaseClient
-        .storage
-        .from(bucketName)
-        .upload(path, file, {
-          cacheControl: "3600",
-          upsert: true,
-        });
-
-      if (error) {
-        console.error("Erreur Supabase Storage:", error);
-        alert("Pièce jointe : erreur lors de l'envoi.\n\n" + error.message);
-        return existingUrl || null;
-      }
-
-      const { data: publicData } = supabaseClient
-        .storage
-        .from(bucketName)
-        .getPublicUrl(path);
-
-      return publicData.publicUrl;
-    }
-
-    function voirPieceJointe(url) {
-      if (!url) {
-        alert("Aucune pièce jointe pour ce courrier.");
-        return;
-      }
-      window.open(url, "_blank");
-    }
-    window.voirPieceJointe = voirPieceJointe;
-
-    /* ========= CRUD ========= */
-    function ouvrirEdition(index) {
-      if (!currentUser || currentUser.role !== ROLES.BO_ADMIN) {
-        alert("Seul le Bureau d'Ordre (BO) peut modifier un courrier.");
-        return;
-      }
-      editIndex = index;
-      remplirFormulaire(courriers[index]);
-      openModal(false);
-    }
-    window.ouvrirEdition = ouvrirEdition;
-
-    function supprimerCourrier(index) {
-      if (!currentUser || currentUser.role !== ROLES.BO_ADMIN) {
-        alert("Seul le Bureau d'Ordre (BO) peut supprimer un courrier.");
-        return;
-      }
-      if (!confirm("Supprimer ce courrier ?")) return;
-      courriers.splice(index, 1);
-      saveCourriers();
-      renderTable();
-    }
-    window.supprimerCourrier = supprimerCourrier;
-
-    /* ========= SUBMIT FORM ========= */
-    courrierForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-
-      if (!currentUser || currentUser.role !== ROLES.BO_ADMIN) {
-        alert("Seul le Bureau d'Ordre (BO) peut enregistrer un courrier.");
-        return;
-      }
-
-      const type = document.getElementById("type-sortant").checked ? "Sortant" : "Entrant";
-      const numero = document.getElementById("numero-input").value.trim();
-      const date = document.getElementById("date-input").value;
-      const expediteur = document.getElementById("expediteur-input").value.trim();
-      const service = document.getElementById("service-input").value;
-      const priorite = document.getElementById("priorite-input").value;
-      const echeance = document.getElementById("echeance-input").value;
-      const statut = document.getElementById("statut-input").value;
-      const objet = document.getElementById("objet-input").value.trim();
-      const instructions = document.getElementById("instructions-input").value.trim();
-      const reference = document.getElementById("reference-input").value.trim();
-      const observations = document.getElementById("observations-input").value.trim();
-      const fileInput = document.getElementById("piece-jointe-input");
+      const sens = document.getElementById("sens").value;
+      const numero = (document.getElementById("numero").value || "").trim();
+      const date_courrier = document.getElementById("date_courrier").value;
+      const service = document.getElementById("service").value;
+      const objet = (document.getElementById("objet").value || "").trim();
+      const exp_dest = (document.getElementById("exp_dest").value || "").trim();
+      const observations = (document.getElementById("observations").value || "").trim();
+      const fileInput = document.getElementById("pj");
       const file = fileInput.files[0] || null;
 
-      if (!numero || !date || !expediteur || !objet) {
-        alert("Les champs N°, Date, Expéditeur/Destinataire et Objet sont obligatoires.");
+      // Vérif champs obligatoires
+      if (!numero || !date_courrier || !service || !objet || !exp_dest) {
+        showError("Merci de remplir tous les champs obligatoires (*).");
         return;
       }
 
-      let existingUrl = null;
-      if (editIndex !== null && courriers[editIndex]) {
-        existingUrl = courriers[editIndex].pieceJointeUrl || null;
-      }
+      setLoading(true);
 
-      const pieceJointeUrl = await uploadPieceJointe(numero, type, file, existingUrl);
+      // 1. Vérifier unicité du numéro pour ce sens
+      const { data: existing, error: existErr } = await supa
+        .from(TABLE_NAME)
+        .select("id, numero")
+        .eq("sens", sens)
+        .eq("numero", numero);
 
-      const nouveauCourrier = {
-        type,
-        numero,
-        date,
-        expediteur,
-        service,
-        priorite,
-        echeance,
-        statut,
-        objet,
-        instructions,
-        reference,
-        observations,
-        pieceJointeUrl,
-      };
-
-      if (editIndex !== null) {
-        courriers[editIndex] = nouveauCourrier;
-      } else {
-        // Nouveau courrier en haut du tableau
-        courriers.unshift(nouveauCourrier);
-      }
-
-      saveCourriers();
-      renderTable();
-      closeModal();
-    });
-
-    /* ========= IMPORT JSON ========= */
-    document.getElementById("import-json-btn").addEventListener("click", () => {
-      if (!currentUser || currentUser.role !== ROLES.BO_ADMIN) {
-        alert("Seul le Bureau d'Ordre (BO) peut importer des données.");
+      if (existErr) {
+        console.error(existErr);
+        showError("Erreur lors de la vérification du numéro : " + existErr.message);
+        setLoading(false);
         return;
       }
-      document.getElementById("json-file-input").click();
-    });
 
-    document.getElementById("json-file-input").addEventListener("change", (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
+      if (existing && existing.length > 0) {
+        showError("Ce numéro d'ordre existe déjà pour les courriers de type " + sens + ".");
+        setLoading(false);
+        return;
+      }
 
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        try {
-          const data = JSON.parse(evt.target.result);
-          if (Array.isArray(data)) {
-            courriers = data;
-            saveCourriers();
-            renderTable();
-            alert("Import JSON terminé avec succès.");
-          } else {
-            alert("Le fichier JSON ne contient pas une liste de courriers.");
-          }
-        } catch (err) {
-          console.error(err);
-          alert("Erreur lors de la lecture du fichier JSON.");
+      // 2. Upload de la PJ si présente
+      let pjPath = null;
+      if (file) {
+        const bucketName = sens === "ARRIVEE" ? BUCKET_ARR : BUCKET_DEP;
+        const uniqueName = Date.now() + "_" + file.name.replace(/\s+/g, "_");
+        const { data: upData, error: upErr } = await supa
+          .storage
+          .from(bucketName)
+          .upload(uniqueName, file);
+
+        if (upErr) {
+          console.error(upErr);
+          showError("Erreur lors de l'upload de la pièce jointe : " + upErr.message);
+          setLoading(false);
+          return;
         }
-      };
-      reader.readAsText(file, "utf-8");
-      e.target.value = "";
-    });
+        pjPath = upData.path; // le chemin sera stocké dans la table
+      }
 
-    /* ========= IMPRESSION ========= */
-    document.getElementById("print-btn").addEventListener("click", () => {
-      if (!currentUser) {
-        alert("Veuillez vous connecter.");
+      // 3. Insert dans la table
+      const insertPayload = {
+        sens,                    // ARRIVEE ou DEPART
+        numero,                  // adapter au nom de la colonne
+        date_courrier,           // adapter si besoin
+        service,
+        objet,
+        exp_dest,                // adapter au nom réel (ex: expediteur_destinataire)
+        observations,
+        pj_url: pjPath           // adapter si ta colonne s'appelle autrement
+      };
+
+      const { data, error } = await supa
+        .from(TABLE_NAME)
+        .insert(insertPayload)
+        .select();
+
+      setLoading(false);
+
+      if (error) {
+        console.error(error);
+        showError("Erreur lors de l'enregistrement : " + error.message);
         return;
       }
-      window.print();
-    });
 
-    /* ========= BOUTONS MODAL / INIT ========= */
-    document.getElementById("new-mail-btn").addEventListener("click", () => {
-      editIndex = null;
-      courrierForm.reset();
-      document.getElementById("type-entrant").checked = true;
-      document.getElementById("priorite-input").value = "Normal";
-      document.getElementById("statut-input").value = "Reçu";
-      openModal(true);
-    });
+      // OK
+      resetForm();
+      loadCourriers();
+    }
 
-    document.getElementById("modal-close").addEventListener("click", closeModal);
-    document.getElementById("modal-cancel").addEventListener("click", closeModal);
-    modalOverlay.addEventListener("click", (e) => {
-      if (e.target === modalOverlay) closeModal();
-    });
+    // ========= SUPPRIMER =========
+    async function deleteCourrier(id) {
+      if (!confirm("Supprimer définitivement ce courrier ?")) return;
 
-    document.getElementById("search-input").addEventListener("input", renderTable);
-    document.getElementById("filter-type").addEventListener("change", renderTable);
-    document.getElementById("filter-service").addEventListener("input", renderTable);
-    document.getElementById("filter-date").addEventListener("change", renderTable);
+      showError("");
 
-    // Connexion / déconnexion
-    document.getElementById("login-submit-btn").addEventListener("click", login);
-    document.getElementById("login-password").addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        login();
+      const { error } = await supa
+        .from(TABLE_NAME)
+        .delete()
+        .eq("id", id);
+
+      if (error) {
+        console.error(error);
+        showError("Erreur lors de la suppression : " + error.message);
+        return;
       }
-    });
-    document.getElementById("logout-btn").addEventListener("click", logout);
 
-    // INIT
-    loadCourriers();
-    applyRoleRules();
-    renderTable();
+      loadCourriers();
+    }
+
+    // ========= INIT =========
+    document.addEventListener("DOMContentLoaded", () => {
+      // Met la date du jour par défaut
+      const today = new Date().toISOString().slice(0, 10);
+      document.getElementById("date_courrier").value = today;
+
+      setSens("ARRIVEE");
+    });
   </script>
 </body>
 </html>
