@@ -16,7 +16,8 @@
       #new-mail-btn,
       #import-json-btn,
       #print-btn,
-      #user-switch {
+      #user-switch,
+      #logout-btn {
         display: none !important;
       }
       body {
@@ -35,26 +36,32 @@
           Bureau d'Ordre – <span class="text-indigo-700 font-bold">BO CPST</span>
         </h1>
         <p class="text-xs text-gray-500">
-          Suivi des courriers entrants et sortants, stockage des pièces jointes (Supabase).
+          Suivi des courriers entrants et sortants, stockage des pièces jointes.
         </p>
       </div>
       <div class="flex items-center space-x-3 text-sm">
+        <!-- Affichage de l'utilisateur connecté -->
         <span id="user-switch" class="px-3 py-1 rounded-full bg-slate-100 border text-gray-700">
-          Connecté : <span class="font-semibold">bo</span> (édition)
+          Non connecté
         </span>
 
+        <button id="logout-btn"
+                class="px-3 py-1.5 rounded-lg bg-slate-100 border text-sm hover:bg-slate-200 hidden">
+          Se déconnecter
+        </button>
+
         <button id="new-mail-btn"
-                class="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700">
+                class="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 hidden">
           Nouveau courrier
         </button>
 
         <button id="import-json-btn"
-                class="px-3 py-1.5 rounded-lg bg-slate-100 border text-sm hover:bg-slate-200">
+                class="px-3 py-1.5 rounded-lg bg-slate-100 border text-sm hover:bg-slate-200 hidden">
           Import JSON
         </button>
 
         <button id="print-btn"
-                class="px-3 py-1.5 rounded-lg border border-gray-300 text-sm font-medium hover:bg-gray-100">
+                class="px-3 py-1.5 rounded-lg border border-gray-300 text-sm font-medium hover:bg-gray-100 hidden">
           Imprimer / PDF
         </button>
 
@@ -157,9 +164,9 @@
     </section>
   </main>
 
-  <!-- MODAL -->
+  <!-- MODAL COURRIER -->
   <div id="modal-overlay"
-       class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 hidden">
+       class="fixed inset-0 bg-black/40 flex items-center justify-center z-40 hidden">
     <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
       <div class="flex items-center justify-between px-5 py-3 border-b">
         <h2 id="modal-title" class="text-lg font-semibold">Nouveau courrier</h2>
@@ -211,7 +218,7 @@
               <option value="">--</option>
               <option value="DGS">DGS</option>
               <option value="SECRETARIAT">SECRETARIAT</option>
-              <option value="PRESIDENCE">PRESIDENCE</option>
+              <option value="PRESIDENT">PRESIDENT</option>
               <option value="SMCSC">SMCSC</option>
               <option value="DAPC">DAPC</option>
               <option value="SATDE">SATDE</option>
@@ -285,7 +292,7 @@
           <input id="piece-jointe-input" type="file" accept=".pdf"
                  class="block w-full text-sm text-gray-700" />
           <p class="mt-1 text-xs text-gray-500">
-            Le fichier sera enregistré dans Supabase avec le nom
+            Le fichier sera enregistré avec le nom
             <strong>NUMERO.pdf</strong> dans le bucket <strong>Arrivee</strong> ou
             <strong>Depart</strong>.
           </p>
@@ -303,6 +310,62 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- MODAL CONNEXION (OBLIGATOIRE) -->
+  <div id="login-modal"
+       class="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
+      <h2 class="text-lg font-semibold mb-4 text-center">
+        Connexion – <span class="text-indigo-700 font-bold">BO CPST</span>
+      </h2>
+      <p class="text-xs text-gray-500 mb-4 text-center">
+        Sélectionnez votre profil et saisissez votre mot de passe.
+      </p>
+
+      <div class="space-y-3 text-sm">
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Utilisateur</label>
+          <select id="login-user-select"
+                  class="w-full border rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500">
+            <option value="">-- Sélectionner --</option>
+            <option value="BO">BO (Bureau d'Ordre)</option>
+            <option value="PRESIDENT">PRESIDENT</option>
+            <option value="DGS">DGS</option>
+            <option value="SECRETARIAT">SECRETARIAT</option>
+            <option value="SAFP">SAFP</option>
+            <option value="SATDE">SATDE</option>
+            <option value="SMCSC">SMCSC</option>
+            <option value="DAPC">DAPC</option>
+            <option value="SRHAJ">SRHAJ</option>
+            <option value="BGA">BGA</option>
+            <option value="BGPA">BGPA</option>
+            <option value="BIN">BIN</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Mot de passe</label>
+          <input id="login-password" type="password"
+                 class="w-full border rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                 placeholder="Mot de passe" />
+        </div>
+
+        <div class="pt-2 flex justify-end space-x-3">
+          <button id="login-submit-btn"
+                  class="px-4 py-2 rounded-lg bg-indigo-600 text-sm font-semibold text-white hover:bg-indigo-700">
+            Se connecter
+          </button>
+        </div>
+
+        <p class="text-[11px] text-gray-400 mt-2">
+          Accès :
+          <br>• BO → <strong>BO2025!</strong>
+          <br>• PRESIDENT → <strong>PRS2025!</strong>
+          <br>• Services → <strong>NOMSERVICE2025!</strong> (ex : DGS2025!, SAFP2025!)
+        </p>
+      </div>
     </div>
   </div>
 
@@ -336,15 +399,236 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(courriers));
     }
 
+    /* ========= GESTION UTILISATEURS & RÔLES ========= */
+
+    const ROLES = {
+      BO_ADMIN: "BO_ADMIN",
+      PRESIDENT: "PRESIDENT",
+      SERVICE: "SERVICE",
+    };
+
+    // Définition des comptes
+    const USERS = {
+      BO: {
+        label: "Bureau d'Ordre (Admin)",
+        password: "BO2025!",
+        role: ROLES.BO_ADMIN,
+        service: null,
+      },
+      PRESIDENT: {
+        label: "Président",
+        password: "PRS2025!",
+        role: ROLES.PRESIDENT,
+        service: null,
+      },
+      DGS: {
+        label: "DGS",
+        password: "DGS2025!",
+        role: ROLES.SERVICE,
+        service: "DGS",
+      },
+      SECRETARIAT: {
+        label: "SECRETARIAT",
+        password: "SECRETARIAT2025!",
+        role: ROLES.SERVICE,
+        service: "SECRETARIAT",
+      },
+      SAFP: {
+        label: "SAFP",
+        password: "SAFP2025!",
+        role: ROLES.SERVICE,
+        service: "SAFP",
+      },
+      SATDE: {
+        label: "SATDE",
+        password: "SATDE2025!",
+        role: ROLES.SERVICE,
+        service: "SATDE",
+      },
+      SMCSC: {
+        label: "SMCSC",
+        password: "SMCSC2025!",
+        role: ROLES.SERVICE,
+        service: "SMCSC",
+      },
+      DAPC: {
+        label: "DAPC",
+        password: "DAPC2025!",
+        role: ROLES.SERVICE,
+        service: "DAPC",
+      },
+      SRHAJ: {
+        label: "SRHAJ",
+        password: "SRHAJ2025!",
+        role: ROLES.SERVICE,
+        service: "SRHAJ",
+      },
+      BGA: {
+        label: "BGA",
+        password: "BGA2025!",
+        role: ROLES.SERVICE,
+        service: "BGA",
+      },
+      BGPA: {
+        label: "BGPA",
+        password: "BGPA2025!",
+        role: ROLES.SERVICE,
+        service: "BGPA",
+      },
+      BIN: {
+        label: "BIN",
+        password: "BIN2025!",
+        role: ROLES.SERVICE,
+        service: "BIN",
+      },
+    };
+
+    let currentUser = null;
+
+    // Charger utilisateur depuis le localStorage (si déjà connecté)
+    const savedUser = localStorage.getItem("boCurrentUser");
+    if (savedUser) {
+      try {
+        currentUser = JSON.parse(savedUser);
+      } catch (e) {
+        currentUser = null;
+      }
+    }
+
+    function getLoginModal() {
+      return document.getElementById("login-modal");
+    }
+
+    function showLoginModal() {
+      const modal = getLoginModal();
+      if (modal) modal.classList.remove("hidden");
+    }
+
+    function hideLoginModal() {
+      const modal = getLoginModal();
+      if (modal) modal.classList.add("hidden");
+    }
+
+    function applyRoleRules() {
+      const userSwitch = document.getElementById("user-switch");
+      const logoutBtn = document.getElementById("logout-btn");
+      const newMailBtn = document.getElementById("new-mail-btn");
+      const importJsonBtn = document.getElementById("import-json-btn");
+      const printBtn = document.getElementById("print-btn");
+
+      if (!currentUser) {
+        // Pas connecté : bloquer tout
+        showLoginModal();
+        if (userSwitch) userSwitch.textContent = "Non connecté";
+        if (logoutBtn) logoutBtn.classList.add("hidden");
+        if (newMailBtn) newMailBtn.classList.add("hidden");
+        if (importJsonBtn) importJsonBtn.classList.add("hidden");
+        if (printBtn) printBtn.classList.add("hidden");
+        return;
+      }
+
+      // Connecté
+      hideLoginModal();
+
+      const label =
+        (currentUser.label || currentUser.username) +
+        " — rôle : " +
+        currentUser.role +
+        (currentUser.service ? " / " + currentUser.service : "");
+
+      if (userSwitch) userSwitch.textContent = "Connecté : " + label;
+      if (logoutBtn) logoutBtn.classList.remove("hidden");
+
+      // Seul BO_ADMIN peut créer / importer
+      if (currentUser.role === ROLES.BO_ADMIN) {
+        if (newMailBtn) newMailBtn.classList.remove("hidden");
+        if (importJsonBtn) importJsonBtn.classList.remove("hidden");
+      } else {
+        if (newMailBtn) newMailBtn.classList.add("hidden");
+        if (importJsonBtn) importJsonBtn.classList.add("hidden");
+      }
+
+      // Impression autorisée à tous les rôles connectés
+      if (printBtn) printBtn.classList.remove("hidden");
+    }
+
+    function getVisibleCourriers() {
+      if (!currentUser) {
+        return [];
+      }
+
+      // BO et PRESIDENT voient tout
+      if (
+        currentUser.role === ROLES.BO_ADMIN ||
+        currentUser.role === ROLES.PRESIDENT
+      ) {
+        return courriers;
+      }
+
+      // Services : uniquement leurs courriers
+      if (
+        currentUser.role === ROLES.SERVICE &&
+        currentUser.service &&
+        currentUser.service !== ""
+      ) {
+        return courriers.filter((c) => (c.service || "").toUpperCase() === currentUser.service);
+      }
+
+      return [];
+    }
+
+    function login() {
+      const select = document.getElementById("login-user-select");
+      const passwordInput = document.getElementById("login-password");
+      if (!select || !passwordInput) return;
+
+      const username = (select.value || "").toUpperCase();
+      const password = passwordInput.value;
+
+      if (!username) {
+        alert("Veuillez sélectionner un utilisateur.");
+        return;
+      }
+
+      const user = USERS[username];
+      if (!user || user.password !== password) {
+        alert("Utilisateur ou mot de passe incorrect.");
+        return;
+      }
+
+      currentUser = {
+        username,
+        label: user.label,
+        role: user.role,
+        service: user.service,
+      };
+
+      localStorage.setItem("boCurrentUser", JSON.stringify(currentUser));
+      passwordInput.value = "";
+
+      applyRoleRules();
+      renderTable();
+
+      alert("Connecté en tant que " + (user.label || username));
+    }
+
+    function logout() {
+      currentUser = null;
+      localStorage.removeItem("boCurrentUser");
+      applyRoleRules();
+      renderTable();
+    }
+
     /* ========= STATS ========= */
     function computeStats() {
-      const total = courriers.length;
-      const entrants = courriers.filter(c => c.type === "Entrant").length;
-      const sortants = courriers.filter(c => c.type === "Sortant").length;
-      const enTraitement = courriers.filter(c => c.statut === "En cours").length;
-      const urgents = courriers.filter(c => (c.priorite || "").toLowerCase().includes("urgent"));
+      const visible = getVisibleCourriers();
+      const total = visible.length;
+      const entrants = visible.filter(c => c.type === "Entrant").length;
+      const sortants = visible.filter(c => c.type === "Sortant").length;
+      const enTraitement = visible.filter(c => c.statut === "En cours").length;
+      const urgents = visible.filter(c => (c.priorite || "").toLowerCase().includes("urgent"));
       const today = new Date().toISOString().slice(0, 10);
-      const echues = courriers.filter(c => c.echeance && c.echeance < today && c.statut !== "Clôturé");
+      const echues = visible.filter(c => c.echeance && c.echeance < today && c.statut !== "Clôturé");
 
       document.getElementById("stat-total").textContent = total;
       document.getElementById("stat-entrants").textContent = entrants;
@@ -357,6 +641,8 @@
     /* ========= TABLEAU ========= */
     function renderTable() {
       const tbody = document.getElementById("courriers-body");
+      if (!tbody) return;
+
       tbody.innerHTML = "";
 
       const search = document.getElementById("search-input").value.trim().toLowerCase();
@@ -364,7 +650,9 @@
       const serviceFilter = document.getElementById("filter-service").value.trim().toLowerCase();
       const dateFilter = document.getElementById("filter-date").value;
 
-      courriers.forEach((c, index) => {
+      const visibleCourriers = getVisibleCourriers();
+
+      visibleCourriers.forEach((c, index) => {
         if (typeFilter !== "tous" && c.type !== typeFilter) return;
         if (serviceFilter && !(c.service || "").toLowerCase().includes(serviceFilter)) return;
         if (dateFilter && c.date !== dateFilter) return;
@@ -390,6 +678,23 @@
           ? '<button class="px-2 py-1 text-xs rounded-full bg-slate-100 text-gray-800 hover:bg-slate-200" onclick="voirPieceJointe(' + "'" + c.pieceJointeUrl + "'" + ')">Voir</button>'
           : '<span class="text-xs text-gray-400">Aucune</span>';
 
+        // Colonne actions : selon rôle
+        let actionsHtml = "";
+        if (currentUser && currentUser.role === ROLES.BO_ADMIN) {
+          actionsHtml = `
+            <div class="inline-flex space-x-2">
+              <button class="px-2 py-1 text-xs rounded-full bg-blue-600 text-white hover:bg-blue-700"
+                      onclick="ouvrirEdition(${index})">
+                Modifier
+              </button>
+              <button class="px-2 py-1 text-xs rounded-full bg-red-600 text-white hover:bg-red-700"
+                      onclick="supprimerCourrier(${index})">
+                Supprimer
+              </button>
+            </div>
+          `;
+        }
+
         tr.innerHTML = `
           <td class="px-4 py-2 w-20">${c.type}</td>
           <td class="px-4 py-2 w-16">${c.numero || ""}</td>
@@ -410,16 +715,7 @@
             ${pjLabel}
           </td>
           <td class="px-4 py-2 w-40 text-right">
-            <div class="inline-flex space-x-2">
-              <button class="px-2 py-1 text-xs rounded-full bg-blue-600 text-white hover:bg-blue-700"
-                      onclick="ouvrirEdition(${index})">
-                Modifier
-              </button>
-              <button class="px-2 py-1 text-xs rounded-full bg-red-600 text-white hover:bg-red-700"
-                      onclick="supprimerCourrier(${index})">
-                Supprimer
-              </button>
-            </div>
+            ${actionsHtml}
           </td>
         `;
         tbody.appendChild(tr);
@@ -428,12 +724,16 @@
       computeStats();
     }
 
-    /* ========= MODAL ========= */
+    /* ========= MODAL COURRIER ========= */
     const modalOverlay = document.getElementById("modal-overlay");
     const modalTitle = document.getElementById("modal-title");
     const courrierForm = document.getElementById("courrier-form");
 
     function openModal(nouveau = true) {
+      if (!currentUser || currentUser.role !== ROLES.BO_ADMIN) {
+        alert("Seul le Bureau d'Ordre (BO) peut créer ou modifier un courrier.");
+        return;
+      }
       modalTitle.textContent = nouveau ? "Nouveau courrier" : "Modifier le courrier";
       modalOverlay.classList.remove("hidden");
     }
@@ -483,7 +783,7 @@
 
       if (error) {
         console.error("Erreur Supabase Storage:", error);
-        alert("Pièce jointe : erreur lors de l'envoi vers Supabase.\n\n" + error.message);
+        alert("Pièce jointe : erreur lors de l'envoi.\n\n" + error.message);
         return existingUrl || null;
       }
 
@@ -506,6 +806,10 @@
 
     /* ========= CRUD ========= */
     function ouvrirEdition(index) {
+      if (!currentUser || currentUser.role !== ROLES.BO_ADMIN) {
+        alert("Seul le Bureau d'Ordre (BO) peut modifier un courrier.");
+        return;
+      }
       editIndex = index;
       remplirFormulaire(courriers[index]);
       openModal(false);
@@ -513,6 +817,10 @@
     window.ouvrirEdition = ouvrirEdition;
 
     function supprimerCourrier(index) {
+      if (!currentUser || currentUser.role !== ROLES.BO_ADMIN) {
+        alert("Seul le Bureau d'Ordre (BO) peut supprimer un courrier.");
+        return;
+      }
       if (!confirm("Supprimer ce courrier ?")) return;
       courriers.splice(index, 1);
       saveCourriers();
@@ -523,6 +831,11 @@
     /* ========= SUBMIT FORM ========= */
     courrierForm.addEventListener("submit", async (e) => {
       e.preventDefault();
+
+      if (!currentUser || currentUser.role !== ROLES.BO_ADMIN) {
+        alert("Seul le Bureau d'Ordre (BO) peut enregistrer un courrier.");
+        return;
+      }
 
       const type = document.getElementById("type-sortant").checked ? "Sortant" : "Entrant";
       const numero = document.getElementById("numero-input").value.trim();
@@ -539,7 +852,6 @@
       const fileInput = document.getElementById("piece-jointe-input");
       const file = fileInput.files[0] || null;
 
-      // vérif champs obligatoires
       if (!numero || !date || !expediteur || !objet) {
         alert("Les champs N°, Date, Expéditeur/Destinataire et Objet sont obligatoires.");
         return;
@@ -571,6 +883,7 @@
       if (editIndex !== null) {
         courriers[editIndex] = nouveauCourrier;
       } else {
+        // Nouveau courrier en haut du tableau
         courriers.unshift(nouveauCourrier);
       }
 
@@ -581,6 +894,10 @@
 
     /* ========= IMPORT JSON ========= */
     document.getElementById("import-json-btn").addEventListener("click", () => {
+      if (!currentUser || currentUser.role !== ROLES.BO_ADMIN) {
+        alert("Seul le Bureau d'Ordre (BO) peut importer des données.");
+        return;
+      }
       document.getElementById("json-file-input").click();
     });
 
@@ -611,6 +928,10 @@
 
     /* ========= IMPRESSION ========= */
     document.getElementById("print-btn").addEventListener("click", () => {
+      if (!currentUser) {
+        alert("Veuillez vous connecter.");
+        return;
+      }
       window.print();
     });
 
@@ -635,7 +956,18 @@
     document.getElementById("filter-service").addEventListener("input", renderTable);
     document.getElementById("filter-date").addEventListener("change", renderTable);
 
+    // Connexion / déconnexion
+    document.getElementById("login-submit-btn").addEventListener("click", login);
+    document.getElementById("login-password").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        login();
+      }
+    });
+    document.getElementById("logout-btn").addEventListener("click", logout);
+
+    // INIT
     loadCourriers();
+    applyRoleRules();
     renderTable();
   </script>
 </body>
