@@ -30,12 +30,12 @@
     <div class="mb-4 inline-flex rounded-xl bg-white shadow">
       <button id="tabArrivee"
               class="px-4 py-2 text-sm font-semibold rounded-xl bg-slate-800 text-white"
-              onclick="setSens('ARRIVEE')">
+              onclick="setType('ARRIVEE')">
         Courrier Arrivée
       </button>
       <button id="tabDepart"
               class="px-4 py-2 text-sm font-semibold rounded-xl text-slate-700"
-              onclick="setSens('DEPART')">
+              onclick="setType('DEPART')">
         Courrier Départ
       </button>
     </div>
@@ -50,7 +50,7 @@
       <h2 class="text-lg font-semibold text-slate-800 mb-3">Nouveau courrier</h2>
 
       <form id="courrierForm" class="space-y-4" onsubmit="handleSubmit(event)">
-        <input type="hidden" id="sens" name="sens" value="ARRIVEE" />
+        <input type="hidden" id="typeCourrier" name="typeCourrier" value="ARRIVEE" />
 
         <!-- Ligne 1 : Numéro, Date, Service -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -67,7 +67,7 @@
             <label class="block text-xs font-semibold text-slate-600 mb-1">
               Date du courrier <span class="text-red-500">*</span>
             </label>
-            <input id="date_courrier" name="date_courrier" type="date" required
+            <input id="date" name="date" type="date" required
                    class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500" />
           </div>
 
@@ -198,7 +198,7 @@
     const SUPABASE_URL = "https://ltymaadmjdqpvmpjbxbr.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx0eW1hYWRtamRxcHZtcGpieGJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxNTUxMjYsImV4cCI6MjA3ODczMTEyNn0.K7f-eB2mVd-2lomo9-qI4xWW7X3sFDOzx1ukB4OAgmo";
 
-    const TABLE_NAME = "courriers"; // 👉 adapte au nom réel de ta table
+    const TABLE_NAME = "courriers";      // ✅ ta table
     const BUCKET_ARR = "bo_pj_arr";
     const BUCKET_DEP = "bo_pj_dep";
 
@@ -206,7 +206,7 @@
     const supa = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // ========= ÉTAT COURANT =========
-    let currentSens = "ARRIVEE"; // ARRIVEE ou DEPART
+    let currentType = "ARRIVEE"; // ARRIVEE ou DEPART
     let isSaving = false;
 
     // ========= UTILITAIRES UI =========
@@ -231,20 +231,20 @@
 
     function resetForm() {
       document.getElementById("courrierForm").reset();
-      document.getElementById("sens").value = currentSens;
+      document.getElementById("typeCourrier").value = currentType;
       const today = new Date().toISOString().slice(0, 10);
-      document.getElementById("date_courrier").value = today;
+      document.getElementById("date").value = today;
     }
 
-    function setSens(sens) {
-      currentSens = sens;
-      document.getElementById("sens").value = sens;
+    function setType(type) {
+      currentType = type;
+      document.getElementById("typeCourrier").value = type;
 
       const tabArr = document.getElementById("tabArrivee");
       const tabDep = document.getElementById("tabDepart");
       const labelListe = document.getElementById("labelListe");
 
-      if (sens === "ARRIVEE") {
+      if (type === "ARRIVEE") {
         tabArr.classList.add("bg-slate-800", "text-white");
         tabArr.classList.remove("text-slate-700", "bg-white");
         tabDep.classList.remove("bg-slate-800", "text-white");
@@ -277,82 +277,88 @@
         </tr>
       `;
 
-      const { data, error } = await supa
-        .from(TABLE_NAME)
-        .select("*")
-        .eq("sens", currentSens)
-        .order("date_courrier", { ascending: false });
+      try {
+        const { data, error } = await supa
+          .from(TABLE_NAME)
+          .select("*")
+          .eq("type", currentType)
+          .order("date", { ascending: false });
 
-      if (error) {
-        console.error(error);
-        showError("Erreur lors du chargement des courriers : " + error.message);
-        tbody.innerHTML = "";
-        updateCount(0);
-        return;
-      }
-
-      if (!data || data.length === 0) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="7" class="px-3 py-3 text-center text-xs text-slate-400">
-              Aucun courrier trouvé.
-            </td>
-          </tr>
-        `;
-        updateCount(0);
-        return;
-      }
-
-      updateCount(data.length);
-      tbody.innerHTML = "";
-
-      for (const row of data) {
-        // Adapter aux noms de colonnes de TA table
-        const numero = row.numero || row.numero_ordre || "";
-        const dateC = row.date_courrier || row.date || "";
-        const service = row.service || "";
-        const objet = row.objet || "";
-        const expDest = row.exp_dest || row.expediteur_destinataire || "";
-        const pjUrl = row.pj_url || row.pj || null;
-        const bucket = row.sens === "ARRIVEE" ? BUCKET_ARR : BUCKET_DEP;
-
-        // Construction URL publique si on a un chemin PJ
-        let pjLinkHtml = "-";
-        if (pjUrl) {
-          const { data: pub, error: pubErr } = supa
-            .storage
-            .from(bucket)
-            .getPublicUrl(pjUrl);
-
-          if (!pubErr && pub && pub.publicUrl) {
-            pjLinkHtml = `<a href="${pub.publicUrl}" target="_blank" class="text-xs text-slate-700 underline">Ouvrir</a>`;
-          }
+        if (error) {
+          console.error(error);
+          showError("Erreur lors du chargement des courriers : " + error.message);
+          tbody.innerHTML = "";
+          updateCount(0);
+          return;
         }
 
-        const tr = document.createElement("tr");
+        if (!data || data.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="7" class="px-3 py-3 text-center text-xs text-slate-400">
+                Aucun courrier trouvé.
+              </td>
+            </tr>
+          `;
+          updateCount(0);
+          return;
+        }
 
-        tr.innerHTML = `
-          <td class="px-2 py-2 align-top">${numero}</td>
-          <td class="px-2 py-2 align-top">${dateC || ""}</td>
-          <td class="px-2 py-2 align-top">${service}</td>
-          <td class="px-2 py-2 align-top max-w-xs">
-            <div class="line-clamp-2">${objet}</div>
-          </td>
-          <td class="px-2 py-2 align-top max-w-xs">
-            <div class="line-clamp-2">${expDest}</div>
-          </td>
-          <td class="px-2 py-2 align-top text-center">
-            ${pjLinkHtml}
-          </td>
-          <td class="px-2 py-2 align-top text-center">
-            <button class="text-[11px] text-red-600 hover:underline"
-                    onclick="deleteCourrier('${row.id}')">
-              Supprimer
-            </button>
-          </td>
-        `;
+        updateCount(data.length);
+        tbody.innerHTML = "";
 
-        tbody.appendChild(tr);
+        for (const row of data) {
+          const numero = row.numero || "";
+          const dateC = row.date || "";
+          const service = row.service || "";
+          const objet = row.objet || "";
+          const expDest = currentType === "ARRIVEE"
+            ? (row.expediteur || "")
+            : (row.destinataire || "");
+          const pjPath = row.piece_jointe_url || null;
+          const bucket = currentType === "ARRIVEE" ? BUCKET_ARR : BUCKET_DEP;
+
+          let pjLinkHtml = "-";
+          if (pjPath) {
+            const { data: pub } = supa
+              .storage
+              .from(bucket)
+              .getPublicUrl(pjPath);
+            if (pub && pub.publicUrl) {
+              pjLinkHtml = `<a href="${pub.publicUrl}" target="_blank" class="text-xs text-slate-700 underline">Ouvrir</a>`;
+            }
+          }
+
+          const tr = document.createElement("tr");
+
+          tr.innerHTML = `
+            <td class="px-2 py-2 align-top">${numero}</td>
+            <td class="px-2 py-2 align-top">${dateC || ""}</td>
+            <td class="px-2 py-2 align-top">${service}</td>
+            <td class="px-2 py-2 align-top max-w-xs">
+              <div class="line-clamp-2">${objet}</div>
+            </td>
+            <td class="px-2 py-2 align-top max-w-xs">
+              <div class="line-clamp-2">${expDest}</div>
+            </td>
+            <td class="px-2 py-2 align-top text-center">
+              ${pjLinkHtml}
+            </td>
+            <td class="px-2 py-2 align-top text-center">
+              <button class="text-[11px] text-red-600 hover:underline"
+                      onclick="deleteCourrier('${row.id}')">
+                Supprimer
+              </button>
+            </td>
+          `;
+
+          tbody.appendChild(tr);
+        }
+      } catch (err) {
+        console.error(err);
+        showError("Impossible de contacter Supabase (réseau) : " + err.message);
+        tbody.innerHTML = "";
+        updateCount(0);
       }
     }
 
@@ -363,9 +369,9 @@
 
       showError("");
 
-      const sens = document.getElementById("sens").value;
+      const type = currentType;
       const numero = (document.getElementById("numero").value || "").trim();
-      const date_courrier = document.getElementById("date_courrier").value;
+      const date = document.getElementById("date").value;
       const service = document.getElementById("service").value;
       const objet = (document.getElementById("objet").value || "").trim();
       const exp_dest = (document.getElementById("exp_dest").value || "").trim();
@@ -373,19 +379,18 @@
       const fileInput = document.getElementById("pj");
       const file = fileInput.files[0] || null;
 
-      // Vérif champs obligatoires
-      if (!numero || !date_courrier || !service || !objet || !exp_dest) {
+      if (!numero || !date || !service || !objet || !exp_dest) {
         showError("Merci de remplir tous les champs obligatoires (*).");
         return;
       }
 
       setLoading(true);
 
-      // 1. Vérifier unicité du numéro pour ce sens
+      // 1. Vérifier unicité du numéro pour ce type
       const { data: existing, error: existErr } = await supa
         .from(TABLE_NAME)
         .select("id, numero")
-        .eq("sens", sens)
+        .eq("type", type)
         .eq("numero", numero);
 
       if (existErr) {
@@ -396,7 +401,7 @@
       }
 
       if (existing && existing.length > 0) {
-        showError("Ce numéro d'ordre existe déjà pour les courriers de type " + sens + ".");
+        showError("Ce numéro d'ordre existe déjà pour les courriers de type " + type + ".");
         setLoading(false);
         return;
       }
@@ -404,7 +409,7 @@
       // 2. Upload de la PJ si présente
       let pjPath = null;
       if (file) {
-        const bucketName = sens === "ARRIVEE" ? BUCKET_ARR : BUCKET_DEP;
+        const bucketName = type === "ARRIVEE" ? BUCKET_ARR : BUCKET_DEP;
         const uniqueName = Date.now() + "_" + file.name.replace(/\s+/g, "_");
         const { data: upData, error: upErr } = await supa
           .storage
@@ -417,25 +422,34 @@
           setLoading(false);
           return;
         }
-        pjPath = upData.path; // le chemin sera stocké dans la table
+        pjPath = upData.path; // stocké dans piece_jointe_url
       }
 
-      // 3. Insert dans la table
+      // 3. Insert dans la table courriers
       const insertPayload = {
-        sens,                    // ARRIVEE ou DEPART
-        numero,                  // adapter au nom de la colonne
-        date_courrier,           // adapter si besoin
+        type,                     // ARRIVEE / DEPART
+        numero,
+        date,                     // colonne 'date'
         service,
         objet,
-        exp_dest,                // adapter au nom réel (ex: expediteur_destinataire)
         observations,
-        pj_url: pjPath           // adapter si ta colonne s'appelle autrement
+        piece_jointe_url: pjPath
       };
+
+      // Gestion des colonnes expediteur / destinataire
+      if (type === "ARRIVEE") {
+        insertPayload.expediteur = exp_dest;
+        insertPayload.destinataire = "";
+      } else {
+        insertPayload.expediteur = "";
+        insertPayload.destinataire = exp_dest;
+      }
 
       const { data, error } = await supa
         .from(TABLE_NAME)
         .insert(insertPayload)
-        .select();
+        .select()
+        .single();
 
       setLoading(false);
 
@@ -445,7 +459,6 @@
         return;
       }
 
-      // OK
       resetForm();
       loadCourriers();
     }
@@ -472,11 +485,10 @@
 
     // ========= INIT =========
     document.addEventListener("DOMContentLoaded", () => {
-      // Met la date du jour par défaut
       const today = new Date().toISOString().slice(0, 10);
-      document.getElementById("date_courrier").value = today;
+      document.getElementById("date").value = today;
 
-      setSens("ARRIVEE");
+      setType("ARRIVEE");
     });
   </script>
 </body>
