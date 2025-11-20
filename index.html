@@ -286,24 +286,69 @@
 
     // ========= PROFILS UTILISATEURS =========
     // ❗ Adapte ces emails / services à tes vrais comptes Supabase Auth
-    const USER_PROFILES = {
-      "bo@cpst.ma": {
-        label: "BUREAU D'ORDRE",
-        service: "SECRETARIAT",
-        canSeeAll: false
-      },
-      "dgs@cpst.ma": {
-        label: "DGS",
-        service: "DGS",
-        canSeeAll: true // voit tout
-      },
-      "presidente@cpst.ma": {
-        label: "PRÉSIDENTE",
-        service: "PRESIDENCE",
-        canSeeAll: true // voit tout
-      },
-      // exemple : "safp@cpst.ma": { label: "SAFP", service: "SAFP", canSeeAll: false },
-    };
+   const USER_PROFILES = {
+  "bo@cpst.ma": {
+    label: "BUREAU D'ORDRE",
+    service: "SECRETARIAT",
+    canSeeAll: true   // peut voir tous les courriers
+  },
+  "dgs@cpst.ma": {
+    label: "DGS",
+    service: "DGS",
+    canSeeAll: true   // voit tout
+  },
+  "presidente@cpst.ma": {
+    label: "PRÉSIDENTE",
+    service: "PRESIDENCE",
+    canSeeAll: true   // voit tout
+  },
+  "secretariat@cpst.ma": {
+    label: "SECRETARIAT",
+    service: "SECRETARIAT",
+    canSeeAll: false
+  },
+  "dapc@cpst.ma": {
+    label: "DAPC",
+    service: "DAPC",
+    canSeeAll: false
+  },
+  "safp@cpst.ma": {
+    label: "SAFP",
+    service: "SAFP",
+    canSeeAll: false
+  },
+  "smcsc@cpst.ma": {
+    label: "SMCSC",
+    service: "SMCSC",
+    canSeeAll: false
+  },
+  "satde@cpst.ma": {
+    label: "SATDE",
+    service: "SATDE",
+    canSeeAll: false
+  },
+  "bgpa@cpst.ma": {
+    label: "BGPA",
+    service: "BGPA",
+    canSeeAll: false
+  },
+  "bga@cpst.ma": {
+    label: "BGA",
+    service: "BGA",
+    canSeeAll: false
+  },
+  "srhaj@cpst.ma": {
+    label: "SRHAJ",
+    service: "SRHAJ",
+    canSeeAll: false
+  },
+  "bid@cpst.ma": {
+    label: "BID",
+    service: "BID",
+    canSeeAll: false
+  }
+};
+
 
     let currentUser = null;
     let currentProfile = null;
