@@ -1,514 +1,787 @@
-<script>
-  // ========= CONFIG SUPABASE =========
-  const SUPABASE_URL = "https://ltymaadmjdqpvmpjbxbr.supabase.co";
-  const SUPABASE_ANON_KEY =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx0eW1hYWRtamRxcHZtcGpieGJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxNTUxMjYsImV4cCI6MjA3ODczMTEyNn0.K7f-eB2mVd-2lomo9-qI4xWW7X3sFDOzx1ukB4OAgmo";
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Bureau d'Ordre – BO CPST</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  const TABLE_NAME = "courriers";
-  const BUCKET_ARR = "bo_pj_arr";
-  const BUCKET_DEP = "bo_pj_dep";
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
 
-  const { createClient } = supabase;
-  const supa = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  <!-- Supabase JS v2 (UMD globale "supabase") -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.48.0/dist/umd/supabase.js"></script>
+</head>
+<body class="bg-slate-100 min-h-screen">
+  <div class="max-w-6xl mx-auto py-6 px-3">
 
-  // ========= PROFILS UTILISATEURS =========
-  const USER_PROFILES = {
-    "bo@cpst.ma": {
-      label: "BUREAU D'ORDRE",
-      service: "SECRETARIAT",
-      canSeeAll: true,
-      canEdit: true, // seul BO peut éditer
-    },
-    "dgs@cpst.ma": {
-      label: "DGS",
-      service: "DGS",
-      canSeeAll: true,
-      canEdit: false,
-    },
-    "presidente@cpst.ma": {
-      label: "PRÉSIDENTE",
-      service: "PRESIDENCE",
-      canSeeAll: true,
-      canEdit: false,
-    },
-    "secretariat@cpst.ma": {
-      label: "SECRETARIAT",
-      service: "SECRETARIAT",
-      canSeeAll: false,
-      canEdit: false,
-    },
-    "dapc@cpst.ma": {
-      label: "DAPC",
-      service: "DAPC",
-      canSeeAll: false,
-      canEdit: false,
-    },
-    "safp@cpst.ma": {
-      label: "SAFP",
-      service: "SAFP",
-      canSeeAll: false,
-      canEdit: false,
-    },
-    "smcsc@cpst.ma": {
-      label: "SMCSC",
-      service: "SMCSC",
-      canSeeAll: false,
-      canEdit: false,
-    },
-    "satde@cpst.ma": {
-      label: "SATDE",
-      service: "SATDE",
-      canSeeAll: false,
-      canEdit: false,
-    },
-    "bgpa@cpst.ma": {
-      label: "BGPA",
-      service: "BGPA",
-      canSeeAll: false,
-      canEdit: false,
-    },
-    "bga@cpst.ma": {
-      label: "BGA",
-      service: "BGA",
-      canSeeAll: false,
-      canEdit: false,
-    },
-    "srhaj@cpst.ma": {
-      label: "SRHAJ",
-      service: "SRHAJ",
-      canSeeAll: false,
-      canEdit: false,
-    },
-    "bid@cpst.ma": {
-      label: "BID",
-      service: "BID",
-      canSeeAll: false,
-      canEdit: false,
-    },
-  };
+    <!-- ========= ZONE CONNEXION ========= -->
+    <section id="loginArea" class="max-w-md mx-auto bg-white rounded-2xl shadow p-6 mb-6">
+      <h2 class="text-xl font-semibold text-slate-800 mb-1">Connexion</h2>
+      <p class="text-xs text-slate-500 mb-4">
+        Entrez votre email professionnel et votre mot de passe Supabase.
+      </p>
 
-  let currentUser = null;
-  let currentProfile = null;
-  let currentType = "ARRIVEE"; // ARRIVEE ou DEPART
-  let isSaving = false;
+      <div id="loginError"
+           class="hidden mb-3 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-700"></div>
 
-  // ========= GESTION UI =========
-  function showError(msg) {
-    const box = document.getElementById("globalError");
-    if (!msg) {
-      box.classList.add("hidden");
-      box.textContent = "";
-      return;
-    }
-    box.textContent = msg;
-    box.classList.remove("hidden");
-  }
+      <form onsubmit="handleLogin(event)" class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Email</label>
+          <input id="loginEmail" type="email" required
+                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500"
+                 placeholder="ex. bo@cpst.ma" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Mot de passe</label>
+          <input id="loginPassword" type="password" required
+                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500" />
+        </div>
+        <button type="submit"
+                id="btnLogin"
+                class="w-full rounded-xl bg-slate-800 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-60">
+          Se connecter
+        </button>
+      </form>
+    </section>
 
-  function setLoading(loading) {
-    isSaving = loading;
-    document.getElementById("btnSave").disabled = loading;
-    const spinner = document.getElementById("spinner");
-    if (loading) spinner.classList.remove("hidden");
-    else spinner.classList.add("hidden");
-  }
+    <!-- ========= APPLICATION PRINCIPALE ========= -->
+    <div id="app" class="hidden">
 
-  function resetForm() {
-    document.getElementById("courrierForm").reset();
-    document.getElementById("typeCourrier").value = currentType;
-    const today = new Date().toISOString().slice(0, 10);
-    document.getElementById("date").value = today;
-    applyServiceLock();
-  }
+      <!-- En-tête -->
+      <header class="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 class="text-2xl font-bold text-slate-800">Bureau d'Ordre – CPST</h1>
+          <p class="text-sm text-slate-500">Gestion du courrier arrivée / départ avec pièces jointes (Supabase).</p>
+        </div>
+        <div class="flex flex-col items-end gap-1 text-xs text-slate-500">
+          <div>
+            Utilisateur : <span id="currentUserLabel" class="font-semibold">–</span>
+          </div>
+          <button onclick="handleLogout()"
+                  class="text-[11px] underline text-slate-600 hover:text-slate-800">
+            Se déconnecter
+          </button>
+        </div>
+      </header>
 
-  function setType(type) {
-    currentType = type;
-    document.getElementById("typeCourrier").value = type;
+      <!-- Onglets Arrivée / Départ -->
+      <div class="mb-4 inline-flex rounded-xl bg-white shadow">
+        <button id="tabArrivee"
+                class="px-4 py-2 text-sm font-semibold rounded-xl bg-slate-800 text-white"
+                onclick="setType('ARRIVEE')">
+          Courrier Arrivée
+        </button>
+        <button id="tabDepart"
+                class="px-4 py-2 text-sm font-semibold rounded-xl text-slate-700"
+                onclick="setType('DEPART')">
+          Courrier Départ
+        </button>
+      </div>
 
-    const tabArr = document.getElementById("tabArrivee");
-    const tabDep = document.getElementById("tabDepart");
-    const labelListe = document.getElementById("labelListe");
+      <!-- Message d'erreur global -->
+      <div id="globalError"
+           class="hidden mb-4 rounded-lg border border-red-300 bg-red-50 px-4 py-2 text-sm text-red-700">
+      </div>
 
-    if (type === "ARRIVEE") {
-      tabArr.classList.add("bg-slate-800", "text-white");
-      tabArr.classList.remove("text-slate-700", "bg-white");
-      tabDep.classList.remove("bg-slate-800", "text-white");
-      tabDep.classList.add("text-slate-700", "bg-white");
-      labelListe.textContent = "Arrivée";
-    } else {
-      tabDep.classList.add("bg-slate-800", "text-white");
-      tabDep.classList.remove("text-slate-700", "bg-white");
-      tabArr.classList.remove("bg-slate-800", "text-white");
-      tabArr.classList.add("text-slate-700", "bg-white");
-      labelListe.textContent = "Départ";
-    }
+      <!-- Formulaire -->
+      <section class="mb-6 bg-white rounded-2xl shadow p-4 md:p-6">
+        <h2 class="text-lg font-semibold text-slate-800 mb-3">Nouveau courrier</h2>
 
-    loadCourriers();
-  }
+        <form id="courrierForm" class="space-y-4" onsubmit="handleSubmit(event)">
+          <input type="hidden" id="typeCourrier" name="typeCourrier" value="ARRIVEE" />
 
-  function updateCount(count) {
-    document.getElementById("countBadge").textContent = count + " enreg.";
-    document.getElementById("statTotal").textContent = count;
-    document.getElementById("statService").textContent =
-      currentProfile && currentProfile.canSeeAll
-        ? "Tous"
-        : currentProfile?.service || "–";
-  }
+          <!-- Ligne 1 : Numéro, Date, Service -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">
+                N° d'ordre <span class="text-red-500">*</span>
+              </label>
+              <input id="numero" name="numero" type="text" required
+                     class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500"
+                     placeholder="Saisir le numéro d'ordre (unique par type)" />
+            </div>
 
-  function clearDateFilters() {
-    document.getElementById("filterDateFrom").value = "";
-    document.getElementById("filterDateTo").value = "";
-    loadCourriers();
-  }
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">
+                Date du courrier <span class="text-red-500">*</span>
+              </label>
+              <input id="date" name="date" type="date" required
+                     class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500" />
+            </div>
 
-  function applyServiceLock() {
-    const serviceSelect = document.getElementById("service");
-    const info = document.getElementById("serviceInfo");
-    if (!currentProfile) return;
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">
+                Service concerné <span class="text-red-500">*</span>
+              </label>
+              <select id="service" name="service" required
+                      class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500">
+                <option value="">-- Choisir --</option>
+                <option value="DGS">DGS</option>
+                <option value="SECRETARIAT">SECRETARIAT</option>
+                <option value="PRESIDENCE">PRESIDENCE</option>
+                <option value="SMCSC">SMCSC</option>
+                <option value="DAPC">DAPC</option>
+                <option value="SATDE">SATDE</option>
+                <option value="SAFP">SAFP</option>
+                <option value="SRHAJ">SRHAJ</option>
+                <option value="BGA">BGA</option>
+                <option value="BGPA">BGPA</option>
+                <option value="BIN">BIN</option>
+              </select>
+              <p id="serviceInfo" class="mt-1 text-[10px] text-slate-400"></p>
+            </div>
+          </div>
 
-    if (!currentProfile.canSeeAll && currentProfile.service) {
-      serviceSelect.value = currentProfile.service;
-      serviceSelect.disabled = true;
-      info.textContent =
-        "Votre service est fixé à " + currentProfile.service + ".";
-    } else {
-      serviceSelect.disabled = false;
-      info.textContent =
-        "DGS / PRÉSIDENTE peuvent choisir n'importe quel service.";
-    }
-  }
+          <!-- Ligne 2 : Objet -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">
+              Objet <span class="text-red-500">*</span>
+            </label>
+            <input id="objet" name="objet" type="text" required
+                   class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500"
+                   placeholder="Objet du courrier" />
+          </div>
 
-  function toggleEditRights() {
-    const canEdit = !!(currentProfile && currentProfile.canEdit);
-    const btnSave = document.getElementById("btnSave");
-    if (btnSave) {
-      btnSave.classList.toggle("hidden", !canEdit);
-    }
-  }
+          <!-- Ligne 3 : Expéditeur / Destinataire -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">
+              Expéditeur / Destinataire <span class="text-red-500">*</span>
+            </label>
+            <input id="exp_dest" name="exp_dest" type="text" required
+                   class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500"
+                   placeholder="Nom de l'expéditeur ou du destinataire" />
+          </div>
 
-  // ========= AUTH =========
-  function setSession(user) {
-    currentUser = user || null;
-    const app = document.getElementById("app");
-    const loginArea = document.getElementById("loginArea");
+          <!-- Ligne 4 : Observations -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">
+              Observations
+            </label>
+            <textarea id="observations" name="observations" rows="2"
+                      class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500"
+                      placeholder="Remarques, instructions, etc."></textarea>
+          </div>
 
-    if (currentUser) {
-      const profile =
-        USER_PROFILES[currentUser.email] || {
-          label: currentUser.email,
-          service: null,
-          canSeeAll: true,
-          canEdit: false,
-        };
+          <!-- Ligne 5 : Pièce jointe -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">
+                Pièce jointe (PDF, image, …)
+              </label>
+              <input id="pj" type="file"
+                     class="w-full text-sm text-slate-600
+                            file:mr-2 file:rounded-lg file:border-0
+                            file:bg-slate-800 file:px-3 file:py-1.5 file:text-sm file:font-semibold
+                            file:text-white hover:file:bg-slate-700" />
+            </div>
 
-      currentProfile = profile;
+            <div class="text-xs text-slate-500">
+              <p>• Pour le courrier <strong>ARRIVEE</strong>, les PJ vont dans le bucket <code>bo_pj_arr</code>.</p>
+              <p>• Pour le courrier <strong>DEPART</strong>, les PJ vont dans le bucket <code>bo_pj_dep</code>.</p>
+            </div>
+          </div>
 
-      document.getElementById("currentUserLabel").textContent =
-        profile.label +
-        (profile.service ? " (" + profile.service + ")" : "");
+          <!-- Boutons -->
+          <div class="flex items-center gap-3 pt-2">
+            <button type="submit"
+                    id="btnSave"
+                    class="inline-flex items-center gap-2 rounded-xl bg-slate-800 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-60 disabled:cursor-not-allowed">
+              <span>Enregistrer</span>
+              <span id="spinner" class="hidden animate-spin border-2 border-white border-r-transparent rounded-full h-4 w-4"></span>
+            </button>
+            <button type="button"
+                    onclick="resetForm()"
+                    class="text-xs text-slate-500 hover:text-slate-700">
+              Vider le formulaire
+            </button>
+          </div>
+        </form>
+      </section>
 
-      loginArea.classList.add("hidden");
-      app.classList.remove("hidden");
+      <!-- FILTRES + STATISTIQUES -->
+      <section class="mb-3 flex flex-col md:flex-row md:items-end md:justify-between gap-3">
+        <div class="bg-white rounded-2xl shadow p-3 flex-1">
+          <h3 class="text-xs font-semibold text-slate-600 mb-2">Filtrer par date</h3>
+          <div class="flex flex-wrap gap-2 items-center">
+            <div>
+              <label class="block text-[11px] text-slate-500 mb-1">Du</label>
+              <input id="filterDateFrom" type="date"
+                     class="rounded-lg border border-slate-300 px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-slate-500" />
+            </div>
+            <div>
+              <label class="block text-[11px] text-slate-500 mb-1">Au</label>
+              <input id="filterDateTo" type="date"
+                     class="rounded-lg border border-slate-300 px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-slate-500" />
+            </div>
+            <button type="button"
+                    onclick="loadCourriers()"
+                    class="mt-4 md:mt-0 rounded-xl bg-slate-800 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-700">
+              Appliquer le filtre
+            </button>
+            <button type="button"
+                    onclick="clearDateFilters()"
+                    class="mt-4 md:mt-0 text-[11px] text-slate-500 hover:text-slate-700 underline">
+              Réinitialiser
+            </button>
+          </div>
+        </div>
 
-      applyServiceLock();
-      toggleEditRights();
-    } else {
-      currentProfile = null;
-      app.classList.add("hidden");
-      loginArea.classList.remove("hidden");
-    }
-  }
+        <div class="bg-white rounded-2xl shadow p-3 w-full md:w-64">
+          <h3 class="text-xs font-semibold text-slate-600 mb-2">Statistiques (période filtrée)</h3>
+          <p class="text-[11px] text-slate-500 mb-1">
+            Total courriers : <span id="statTotal" class="font-semibold text-slate-800">0</span>
+          </p>
+          <p class="text-[11px] text-slate-500">
+            Pour le service : <span id="statService" class="font-semibold text-slate-800">–</span>
+          </p>
+        </div>
+      </section>
 
-  async function handleLogin(event) {
-    event.preventDefault();
-    document.getElementById("loginError").classList.add("hidden");
-    const email = document.getElementById("loginEmail").value.trim();
-    const password = document.getElementById("loginPassword").value;
+      <!-- Liste des courriers -->
+      <section class="bg-white rounded-2xl shadow p-4 md:p-6">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-lg font-semibold text-slate-800">
+            Liste des courriers <span id="labelListe">Arrivée</span>
+          </h2>
+          <span id="countBadge"
+                class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+            0 enreg.
+          </span>
+        </div>
 
-    document.getElementById("btnLogin").disabled = true;
+        <div class="overflow-x-auto">
+          <table class="min-w-full text-xs border border-slate-200 rounded-lg overflow-hidden">
+            <thead class="bg-slate-100 text-slate-700">
+              <tr>
+                <th class="px-2 py-2 text-left">N°</th>
+                <th class="px-2 py-2 text-left">Date</th>
+                <th class="px-2 py-2 text-left">Service</th>
+                <th class="px-2 py-2 text-left">Objet</th>
+                <th class="px-2 py-2 text-left">Exp./Dest.</th>
+                <th class="px-2 py-2 text-center">PJ</th>
+                <th class="px-2 py-2 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="courriersBody" class="divide-y divide-slate-100 bg-white">
+              <!-- lignes générées en JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </div>
 
-    const { data, error } = await supa.auth.signInWithPassword({
-      email,
-      password,
-    });
+  <!-- ====================== SCRIPT JS ====================== -->
+  <script>
+    // ========= CONFIG SUPABASE =========
+    const SUPABASE_URL = "https://ltymaadmjdqpvmpjbxbr.supabase.co";
+    const SUPABASE_ANON_KEY =
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx0eW1hYWRtamRxcHZtcGpieGJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxNTUxMjYsImV4cCI6MjA3ODczMTEyNn0.K7f-eB2mVd-2lomo9-qI4xWW7X3sFDOzx1ukB4OAgmo";
 
-    document.getElementById("btnLogin").disabled = false;
+    const TABLE_NAME = "courriers";
+    const BUCKET_ARR = "bo_pj_arr";
+    const BUCKET_DEP = "bo_pj_dep";
 
-    if (error) {
-      const box = document.getElementById("loginError");
-      box.textContent = "Connexion impossible : " + error.message;
+    const { createClient } = supabase;
+    const supa = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // ========= PROFILS UTILISATEURS =========
+    const USER_PROFILES = {
+      "bo@cpst.ma": {
+        label: "BUREAU D'ORDRE",
+        service: "SECRETARIAT",
+        canSeeAll: true,
+        canEdit: true, // seul BO peut éditer
+      },
+      "dgs@cpst.ma": {
+        label: "DGS",
+        service: "DGS",
+        canSeeAll: true,
+        canEdit: false,
+      },
+      "presidente@cpst.ma": {
+        label: "PRÉSIDENTE",
+        service: "PRESIDENCE",
+        canSeeAll: true,
+        canEdit: false,
+      },
+      "secretariat@cpst.ma": {
+        label: "SECRETARIAT",
+        service: "SECRETARIAT",
+        canSeeAll: false,
+        canEdit: false,
+      },
+      "dapc@cpst.ma": {
+        label: "DAPC",
+        service: "DAPC",
+        canSeeAll: false,
+        canEdit: false,
+      },
+      "safp@cpst.ma": {
+        label: "SAFP",
+        service: "SAFP",
+        canSeeAll: false,
+        canEdit: false,
+      },
+      "smcsc@cpst.ma": {
+        label: "SMCSC",
+        service: "SMCSC",
+        canSeeAll: false,
+        canEdit: false,
+      },
+      "satde@cpst.ma": {
+        label: "SATDE",
+        service: "SATDE",
+        canSeeAll: false,
+        canEdit: false,
+      },
+      "bgpa@cpst.ma": {
+        label: "BGPA",
+        service: "BGPA",
+        canSeeAll: false,
+        canEdit: false,
+      },
+      "bga@cpst.ma": {
+        label: "BGA",
+        service: "BGA",
+        canSeeAll: false,
+        canEdit: false,
+      },
+      "srhaj@cpst.ma": {
+        label: "SRHAJ",
+        service: "SRHAJ",
+        canSeeAll: false,
+        canEdit: false,
+      },
+      "bid@cpst.ma": {
+        label: "BID",
+        service: "BID",
+        canSeeAll: false,
+        canEdit: false,
+      },
+    };
+
+    let currentUser = null;
+    let currentProfile = null;
+    let currentType = "ARRIVEE";
+    let isSaving = false;
+
+    // ========= GESTION UI =========
+    function showError(msg) {
+      const box = document.getElementById("globalError");
+      if (!msg) {
+        box.classList.add("hidden");
+        box.textContent = "";
+        return;
+      }
+      box.textContent = msg;
       box.classList.remove("hidden");
-      return;
     }
 
-    setSession(data.user);
-    loadCourriers(); // on recharge la liste après connexion
-  }
+    function setLoading(loading) {
+      isSaving = loading;
+      document.getElementById("btnSave").disabled = loading;
+      const spinner = document.getElementById("spinner");
+      if (loading) spinner.classList.remove("hidden");
+      else spinner.classList.add("hidden");
+    }
 
-  async function handleLogout() {
-    await supa.auth.signOut();
-    setSession(null);
-  }
+    function resetForm() {
+      document.getElementById("courrierForm").reset();
+      document.getElementById("typeCourrier").value = currentType;
+      const today = new Date().toISOString().slice(0, 10);
+      document.getElementById("date").value = today;
+      applyServiceLock();
+    }
 
-  // ========= CHARGER LA LISTE =========
-  async function loadCourriers() {
-    if (!currentUser) return;
+    function setType(type) {
+      currentType = type;
+      document.getElementById("typeCourrier").value = type;
 
-    showError("");
-    const tbody = document.getElementById("courriersBody");
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="7" class="px-3 py-3 text-center text-xs text-slate-400">
-          Chargement en cours...
-        </td>
-      </tr>
-    `;
+      const tabArr = document.getElementById("tabArrivee");
+      const tabDep = document.getElementById("tabDepart");
+      const labelListe = document.getElementById("labelListe");
 
-    try {
-      let query = supa
-        .from(TABLE_NAME)
-        .select("*")
-        .eq("type", currentType)
-        .order("date", { ascending: false });
+      if (type === "ARRIVEE") {
+        tabArr.classList.add("bg-slate-800", "text-white");
+        tabArr.classList.remove("text-slate-700", "bg-white");
+        tabDep.classList.remove("bg-slate-800", "text-white");
+        tabDep.classList.add("text-slate-700", "bg-white");
+        labelListe.textContent = "Arrivée";
+      } else {
+        tabDep.classList.add("bg-slate-800", "text-white");
+        tabDep.classList.remove("text-slate-700", "bg-white");
+        tabArr.classList.remove("bg-slate-800", "text-white");
+        tabArr.classList.add("text-slate-700", "bg-white");
+        labelListe.textContent = "Départ";
+      }
 
-      const from = document.getElementById("filterDateFrom").value;
-      const to = document.getElementById("filterDateTo").value;
-      if (from) query = query.gte("date", from);
-      if (to) query = query.lte("date", to);
+      loadCourriers();
+    }
 
-      const { data, error } = await query;
+    function updateCount(count) {
+      document.getElementById("countBadge").textContent = count + " enreg.";
+      document.getElementById("statTotal").textContent = count;
+      document.getElementById("statService").textContent =
+        currentProfile && currentProfile.canSeeAll
+          ? "Tous"
+          : currentProfile?.service || "–";
+    }
+
+    function clearDateFilters() {
+      document.getElementById("filterDateFrom").value = "";
+      document.getElementById("filterDateTo").value = "";
+      loadCourriers();
+    }
+
+    function applyServiceLock() {
+      const serviceSelect = document.getElementById("service");
+      const info = document.getElementById("serviceInfo");
+      if (!currentProfile) return;
+
+      if (!currentProfile.canSeeAll && currentProfile.service) {
+        serviceSelect.value = currentProfile.service;
+        serviceSelect.disabled = true;
+        info.textContent =
+          "Votre service est fixé à " + currentProfile.service + ".";
+      } else {
+        serviceSelect.disabled = false;
+        info.textContent =
+          "DGS / PRÉSIDENTE peuvent choisir n'importe quel service.";
+      }
+    }
+
+    function toggleEditRights() {
+      const canEdit = !!(currentProfile && currentProfile.canEdit);
+      const btnSave = document.getElementById("btnSave");
+      if (btnSave) {
+        btnSave.classList.toggle("hidden", !canEdit);
+      }
+    }
+
+    // ========= AUTH =========
+    function setSession(user) {
+      currentUser = user || null;
+      const app = document.getElementById("app");
+      const loginArea = document.getElementById("loginArea");
+
+      if (currentUser) {
+        const profile =
+          USER_PROFILES[currentUser.email] || {
+            label: currentUser.email,
+            service: null,
+            canSeeAll: true,
+            canEdit: false,
+          };
+
+        currentProfile = profile;
+
+        document.getElementById("currentUserLabel").textContent =
+          profile.label +
+          (profile.service ? " (" + profile.service + ")" : "");
+
+        loginArea.classList.add("hidden");
+        app.classList.remove("hidden");
+
+        applyServiceLock();
+        toggleEditRights();
+      } else {
+        currentProfile = null;
+        app.classList.add("hidden");
+        loginArea.classList.remove("hidden");
+      }
+    }
+
+    async function handleLogin(event) {
+      event.preventDefault();
+      document.getElementById("loginError").classList.add("hidden");
+      const email = document.getElementById("loginEmail").value.trim();
+      const password = document.getElementById("loginPassword").value;
+
+      document.getElementById("btnLogin").disabled = true;
+
+      const { data, error } = await supa.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      document.getElementById("btnLogin").disabled = false;
 
       if (error) {
-        console.error(error);
-        showError("Erreur lors du chargement des courriers : " + error.message);
-        tbody.innerHTML = "";
-        updateCount(0);
+        const box = document.getElementById("loginError");
+        box.textContent = "Connexion impossible : " + error.message;
+        box.classList.remove("hidden");
         return;
       }
 
-      let filtered = data || [];
-      if (currentProfile && !currentProfile.canSeeAll && currentProfile.service) {
-        filtered = filtered.filter(
-          (row) => (row.service || "") === currentProfile.service
-        );
-      }
+      setSession(data.user);
+      loadCourriers();
+    }
 
-      if (!filtered.length) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="7" class="px-3 py-3 text-center text-xs text-slate-400">
-              Aucun courrier trouvé.
-            </td>
-          </tr>
-        `;
-        updateCount(0);
-        return;
-      }
+    async function handleLogout() {
+      await supa.auth.signOut();
+      setSession(null);
+    }
 
-      updateCount(filtered.length);
-      tbody.innerHTML = "";
+    // ========= CHARGER LA LISTE =========
+    async function loadCourriers() {
+      if (!currentUser) return;
 
-      for (const row of filtered) {
-        const numero = row.numero || "";
-        const dateC = row.date || "";
-        const service = row.service || "";
-        const objet = row.objet || "";
-        const expDest =
-          currentType === "ARRIVEE"
-            ? row.expediteur || ""
-            : row.destinataire || "";
-        const pjPath = row.piece_jointe_url || null;
-        const bucket = currentType === "ARRIVEE" ? BUCKET_ARR : BUCKET_DEP;
+      showError("");
+      const tbody = document.getElementById("courriersBody");
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" class="px-3 py-3 text-center text-xs text-slate-400">
+            Chargement en cours...
+          </td>
+        </tr>
+      `;
 
-        let pjLinkHtml = "-";
-        if (pjPath) {
-          const { data: pub, error: urlErr } = await supa.storage
-            .from(bucket)
-            .createSignedUrl(pjPath, 60 * 60); // 1 heure
+      try {
+        let query = supa
+          .from(TABLE_NAME)
+          .select("*")
+          .eq("type", currentType)
+          .order("date", { ascending: false });
 
-          if (!urlErr && pub && pub.signedUrl) {
-            pjLinkHtml = `<a href="${pub.signedUrl}" target="_blank" class="text-xs text-slate-700 underline">Ouvrir</a>`;
-          }
+        const from = document.getElementById("filterDateFrom").value;
+        const to = document.getElementById("filterDateTo").value;
+        if (from) query = query.gte("date", from);
+        if (to) query = query.lte("date", to);
+
+        const { data, error } = await query;
+
+        if (error) {
+          console.error(error);
+          showError("Erreur lors du chargement des courriers : " + error.message);
+          tbody.innerHTML = "";
+          updateCount(0);
+          return;
         }
 
-        const canEdit = currentProfile && currentProfile.canEdit;
-        const deleteHtml = canEdit
-          ? `<button class="text-[11px] text-red-600 hover:underline"
-                     onclick="deleteCourrier('${row.id}')">
-               Supprimer
-             </button>`
-          : "";
+        let filtered = data || [];
+        if (currentProfile && !currentProfile.canSeeAll && currentProfile.service) {
+          filtered = filtered.filter(
+            (row) => (row.service || "") === currentProfile.service
+          );
+        }
 
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td class="px-2 py-2 align-top">${numero}</td>
-          <td class="px-2 py-2 align-top">${dateC}</td>
-          <td class="px-2 py-2 align-top">${service}</td>
-          <td class="px-2 py-2 align-top max-w-xs">
-            <div class="line-clamp-2">${objet}</div>
-          </td>
-          <td class="px-2 py-2 align-top max-w-xs">
-            <div class="line-clamp-2">${expDest}</div>
-          </td>
-          <td class="px-2 py-2 align-top text-center">
-            ${pjLinkHtml}
-          </td>
-          <td class="px-2 py-2 align-top text-center">
-            ${deleteHtml}
-          </td>
-        `;
-        tbody.appendChild(tr);
+        if (!filtered.length) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="7" class="px-3 py-3 text-center text-xs text-slate-400">
+                Aucun courrier trouvé.
+              </td>
+            </tr>
+          `;
+          updateCount(0);
+          return;
+        }
+
+        updateCount(filtered.length);
+        tbody.innerHTML = "";
+
+        for (const row of filtered) {
+          const numero = row.numero || "";
+          const dateC = row.date || "";
+          const service = row.service || "";
+          const objet = row.objet || "";
+          const expDest =
+            currentType === "ARRIVEE"
+              ? row.expediteur || ""
+              : row.destinataire || "";
+          const pjPath = row.piece_jointe_url || null;
+          const bucket = currentType === "ARRIVEE" ? BUCKET_ARR : BUCKET_DEP;
+
+          let pjLinkHtml = "-";
+          if (pjPath) {
+            const { data: pub, error: urlErr } = await supa.storage
+              .from(bucket)
+              .createSignedUrl(pjPath, 60 * 60); // 1 heure
+
+            if (!urlErr && pub && pub.signedUrl) {
+              pjLinkHtml = `<a href="${pub.signedUrl}" target="_blank" class="text-xs text-slate-700 underline">Ouvrir</a>`;
+            }
+          }
+
+          const canEdit = currentProfile && currentProfile.canEdit;
+          const deleteHtml = canEdit
+            ? `<button class="text-[11px] text-red-600 hover:underline"
+                       onclick="deleteCourrier('${row.id}')">
+                 Supprimer
+               </button>`
+            : "";
+
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td class="px-2 py-2 align-top">${numero}</td>
+            <td class="px-2 py-2 align-top">${dateC}</td>
+            <td class="px-2 py-2 align-top">${service}</td>
+            <td class="px-2 py-2 align-top max-w-xs">
+              <div class="line-clamp-2">${objet}</div>
+            </td>
+            <td class="px-2 py-2 align-top max-w-xs">
+              <div class="line-clamp-2">${expDest}</div>
+            </td>
+            <td class="px-2 py-2 align-top text-center">
+              ${pjLinkHtml}
+            </td>
+            <td class="px-2 py-2 align-top text-center">
+              ${deleteHtml}
+            </td>
+          `;
+          tbody.appendChild(tr);
+        }
+      } catch (err) {
+        console.error(err);
+        showError("Impossible de contacter Supabase (réseau) : " + err.message);
+        tbody.innerHTML = "";
+        updateCount(0);
       }
-    } catch (err) {
-      console.error(err);
-      showError("Impossible de contacter Supabase (réseau) : " + err.message);
-      tbody.innerHTML = "";
-      updateCount(0);
-    }
-  }
-
-  // ========= ENREGISTRER =========
-  async function handleSubmit(event) {
-    event.preventDefault();
-    if (!currentUser || isSaving) return;
-
-    if (!currentProfile || !currentProfile.canEdit) {
-      showError("Vous n'avez pas le droit d'enregistrer un courrier.");
-      return;
     }
 
-    showError("");
+    // ========= ENREGISTRER =========
+    async function handleSubmit(event) {
+      event.preventDefault();
+      if (!currentUser || isSaving) return;
 
-    const type = currentType;
-    const numero = (document.getElementById("numero").value || "").trim();
-    const date = document.getElementById("date").value;
-    const serviceSelect = document.getElementById("service");
-    let service = serviceSelect.value;
-    const objet = (document.getElementById("objet").value || "").trim();
-    const exp_dest = (document.getElementById("exp_dest").value || "").trim();
-    const observations =
-      (document.getElementById("observations").value || "").trim();
-    const fileInput = document.getElementById("pj");
-    const file = fileInput.files[0] || null;
+      if (!currentProfile || !currentProfile.canEdit) {
+        showError("Vous n'avez pas le droit d'enregistrer un courrier.");
+        return;
+      }
 
-    if (!numero || !date || !service || !objet || !exp_dest) {
-      showError("Merci de remplir tous les champs obligatoires (*).");
-      return;
-    }
+      showError("");
 
-    if (currentProfile && !currentProfile.canSeeAll && currentProfile.service) {
-      service = currentProfile.service;
-    }
+      const type = currentType;
+      const numero = (document.getElementById("numero").value || "").trim();
+      const date = document.getElementById("date").value;
+      const serviceSelect = document.getElementById("service");
+      let service = serviceSelect.value;
+      const objet = (document.getElementById("objet").value || "").trim();
+      const exp_dest = (document.getElementById("exp_dest").value || "").trim();
+      const observations =
+        (document.getElementById("observations").value || "").trim();
+      const fileInput = document.getElementById("pj");
+      const file = fileInput.files[0] || null;
 
-    setLoading(true);
+      if (!numero || !date || !service || !objet || !exp_dest) {
+        showError("Merci de remplir tous les champs obligatoires (*).");
+        return;
+      }
 
-    const { data: existing, error: existErr } = await supa
-      .from(TABLE_NAME)
-      .select("id, numero")
-      .eq("type", type)
-      .eq("numero", numero);
+      if (currentProfile && !currentProfile.canSeeAll && currentProfile.service) {
+        service = currentProfile.service;
+      }
 
-    if (existErr) {
-      console.error(existErr);
-      showError(
-        "Erreur lors de la vérification du numéro : " + existErr.message
-      );
-      setLoading(false);
-      return;
-    }
+      setLoading(true);
 
-    if (existing && existing.length > 0) {
-      showError(
-        "Ce numéro d'ordre existe déjà pour les courriers de type " + type + "."
-      );
-      setLoading(false);
-      return;
-    }
+      const { data: existing, error: existErr } = await supa
+        .from(TABLE_NAME)
+        .select("id, numero")
+        .eq("type", type)
+        .eq("numero", numero);
 
-    let pjPath = null;
-    if (file) {
-      const bucketName = type === "ARRIVEE" ? BUCKET_ARR : BUCKET_DEP;
-      const uniqueName =
-        Date.now() + "_" + file.name.replace(/\s+/g, "_");
-      const { data: upData, error: upErr } = await supa.storage
-        .from(bucketName)
-        .upload(uniqueName, file);
+      if (existErr) {
+        console.error(existErr);
+        showError("Erreur lors de la vérification du numéro : " + existErr.message);
+        setLoading(false);
+        return;
+      }
 
-      if (upErr) {
-        console.error(upErr);
+      if (existing && existing.length > 0) {
         showError(
-          "Erreur lors de l'upload de la pièce jointe : " + upErr.message
+          "Ce numéro d'ordre existe déjà pour les courriers de type " + type + "."
         );
         setLoading(false);
         return;
       }
-      pjPath = upData.path;
+
+      let pjPath = null;
+      if (file) {
+        const bucketName = type === "ARRIVEE" ? BUCKET_ARR : BUCKET_DEP;
+        const uniqueName = Date.now() + "_" + file.name.replace(/\s+/g, "_");
+        const { data: upData, error: upErr } = await supa.storage
+          .from(bucketName)
+          .upload(uniqueName, file);
+
+        if (upErr) {
+          console.error(upErr);
+          showError(
+            "Erreur lors de l'upload de la pièce jointe : " + upErr.message
+          );
+          setLoading(false);
+          return;
+        }
+        pjPath = upData.path;
+      }
+
+      const insertPayload = {
+        type,
+        numero,
+        date,
+        service,
+        objet,
+        observations,
+        piece_jointe_url: pjPath,
+      };
+
+      if (type === "ARRIVEE") {
+        insertPayload.expediteur = exp_dest;
+        insertPayload.destinataire = "";
+      } else {
+        insertPayload.expediteur = "";
+        insertPayload.destinataire = exp_dest;
+      }
+
+      const { error } = await supa.from(TABLE_NAME).insert(insertPayload);
+
+      setLoading(false);
+
+      if (error) {
+        console.error(error);
+        showError("Erreur lors de l'enregistrement : " + error.message);
+        return;
+      }
+
+      resetForm();
+      loadCourriers();
     }
 
-    const insertPayload = {
-      type,
-      numero,
-      date,
-      service,
-      objet,
-      observations,
-      piece_jointe_url: pjPath,
-    };
+    // ========= SUPPRIMER =========
+    async function deleteCourrier(id) {
+      if (!currentUser) return;
+      if (!currentProfile || !currentProfile.canEdit) {
+        alert("Vous n'avez pas le droit de supprimer un courrier.");
+        return;
+      }
+      if (!confirm("Supprimer définitivement ce courrier ?")) return;
 
-    if (type === "ARRIVEE") {
-      insertPayload.expediteur = exp_dest;
-      insertPayload.destinataire = "";
-    } else {
-      insertPayload.expediteur = "";
-      insertPayload.destinataire = exp_dest;
+      showError("");
+
+      const { error } = await supa
+        .from(TABLE_NAME)
+        .delete()
+        .eq("id", id);
+
+      if (error) {
+        console.error(error);
+        showError("Erreur lors de la suppression : " + error.message);
+        return;
+      }
+
+      loadCourriers();
     }
 
-    const { error } = await supa.from(TABLE_NAME).insert(insertPayload);
+    // ========= INIT =========
+    document.addEventListener("DOMContentLoaded", async () => {
+      const today = new Date().toISOString().slice(0, 10);
+      document.getElementById("date").value = today;
 
-    setLoading(false);
+      const { data } = await supa.auth.getUser();
+      setSession(data?.user ?? null);
 
-    if (error) {
-      console.error(error);
-      showError("Erreur lors de l'enregistrement : " + error.message);
-      return;
-    }
-
-    resetForm();
-    loadCourriers();
-  }
-
-  // ========= SUPPRIMER =========
-  async function deleteCourrier(id) {
-    if (!currentUser) return;
-    if (!currentProfile || !currentProfile.canEdit) {
-      alert("Vous n'avez pas le droit de supprimer un courrier.");
-      return;
-    }
-    if (!confirm("Supprimer définitivement ce courrier ?")) return;
-
-    showError("");
-
-    const { error } = await supa
-      .from(TABLE_NAME)
-      .delete()
-      .eq("id", id);
-
-    if (error) {
-      console.error(error);
-      showError("Erreur lors de la suppression : " + error.message);
-      return;
-    }
-
-    loadCourriers();
-  }
-
-  // ========= INIT =========
-  document.addEventListener("DOMContentLoaded", async () => {
-    const today = new Date().toISOString().slice(0, 10);
-    document.getElementById("date").value = today;
-
-    const { data } = await supa.auth.getUser();
-    setSession(data?.user ?? null);
-
-    setType("ARRIVEE");
-  });
-</script>
+      setType("ARRIVEE");
+    });
+  </script>
+</body>
+</html>
