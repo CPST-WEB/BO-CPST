@@ -84,7 +84,7 @@
       </div>
 
       <!-- Formulaire -->
-      <section class="mb-6 bg-white rounded-2xl shadow p-4 md:p-6">
+      <section id="formSection" class="mb-6 bg-white rounded-2xl shadow p-4 md:p-6">
         <h2 class="text-lg font-semibold text-slate-800 mb-3">Nouveau courrier</h2>
 
         <form id="courrierForm" class="space-y-4" onsubmit="handleSubmit(event)">
@@ -162,7 +162,19 @@
                       placeholder="Remarques, instructions, etc."></textarea>
           </div>
 
-          <!-- Ligne 5 : Pièce jointe -->
+          <!-- Ligne 5 : Délai de réponse -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">
+              Délai de réponse
+            </label>
+            <input id="delai_reponse" name="delai_reponse" type="date"
+                   class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500" />
+            <p class="mt-1 text-[10px] text-slate-400">
+              Utilisé pour les alertes de suivi (DGS) : jaune J-3, orange J-2, rouge J-1.
+            </p>
+          </div>
+
+          <!-- Ligne 6 : Pièce jointe -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
             <div>
               <label class="block text-xs font-semibold text-slate-600 mb-1">
@@ -258,6 +270,7 @@
                 <th class="px-2 py-2 text-left">Service</th>
                 <th class="px-2 py-2 text-left">Objet</th>
                 <th class="px-2 py-2 text-left">Exp./Dest.</th>
+                <th class="px-2 py-2 text-left">Délai</th>
                 <th class="px-2 py-2 text-center">PJ</th>
                 <th class="px-2 py-2 text-center">Actions</th>
               </tr>
@@ -289,7 +302,7 @@
     const USER_PROFILES = {
       "bo@cpst.ma": {
         label: "BUREAU D'ORDRE",
-        service: "BUREAU D'ORDRE",
+        service: "SECRETARIAT",
         canSeeAll: true,
         canEdit: true, // seul BO peut éditer
       },
@@ -391,6 +404,7 @@
       document.getElementById("typeCourrier").value = currentType;
       const today = new Date().toISOString().slice(0, 10);
       document.getElementById("date").value = today;
+      document.getElementById("delai_reponse").value = "";
       applyServiceLock();
     }
 
@@ -453,9 +467,17 @@
 
     function toggleEditRights() {
       const canEdit = !!(currentProfile && currentProfile.canEdit);
+      const isServiceOnly =
+        currentProfile && !currentProfile.canEdit && !currentProfile.canSeeAll;
+
       const btnSave = document.getElementById("btnSave");
+      const formSection = document.getElementById("formSection");
+
       if (btnSave) {
         btnSave.classList.toggle("hidden", !canEdit);
+      }
+      if (formSection) {
+        formSection.classList.toggle("hidden", !!isServiceOnly);
       }
     }
 
@@ -531,7 +553,7 @@
       const tbody = document.getElementById("courriersBody");
       tbody.innerHTML = `
         <tr>
-          <td colspan="7" class="px-3 py-3 text-center text-xs text-slate-400">
+          <td colspan="8" class="px-3 py-3 text-center text-xs text-slate-400">
             Chargement en cours...
           </td>
         </tr>
@@ -569,7 +591,7 @@
         if (!filtered.length) {
           tbody.innerHTML = `
             <tr>
-              <td colspan="7" class="px-3 py-3 text-center text-xs text-slate-400">
+              <td colspan="8" class="px-3 py-3 text-center text-xs text-slate-400">
                 Aucun courrier trouvé.
               </td>
             </tr>
@@ -581,6 +603,9 @@
         updateCount(filtered.length);
         tbody.innerHTML = "";
 
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
         for (const row of filtered) {
           const numero = row.numero || "";
           const dateC = row.date || "";
@@ -590,9 +615,12 @@
             currentType === "ARRIVEE"
               ? row.expediteur || ""
               : row.destinataire || "";
+          const echeance = row.echeance || "";
+          const statut = row.statut || "";
           const pjPath = row.piece_jointe_url || null;
           const bucket = currentType === "ARRIVEE" ? BUCKET_ARR : BUCKET_DEP;
 
+          // --- Lien PJ sécurisé ---
           let pjLinkHtml = "-";
           if (pjPath) {
             const { data: pub, error: urlErr } = await supa.storage
@@ -604,15 +632,59 @@
             }
           }
 
+          // --- Couleur d'alerte pour la DGS ---
+          let rowClass = "";
+          if (
+            currentProfile &&
+            currentProfile.service === "DGS" &&
+            echeance &&
+            statut !== "CLOS"
+          ) {
+            const dDue = new Date(echeance);
+            dDue.setHours(0, 0, 0, 0);
+            const diffDays = Math.floor(
+              (dDue - today) / (1000 * 60 * 60 * 24)
+            );
+
+            if (diffDays <= 1) {
+              rowClass = "bg-red-100";
+            } else if (diffDays === 2) {
+              rowClass = "bg-orange-100";
+            } else if (diffDays === 3) {
+              rowClass = "bg-yellow-100";
+            }
+          }
+
+          // --- Actions (clôture + suppression) ---
           const canEdit = currentProfile && currentProfile.canEdit;
-          const deleteHtml = canEdit
-            ? `<button class="text-[11px] text-red-600 hover:underline"
-                       onclick="deleteCourrier('${row.id}')">
-                 Supprimer
-               </button>`
-            : "";
+          const isClosed = statut === "CLOS";
+
+          let actionsHtml = "";
+          if (canEdit) {
+            actionsHtml = `
+              <div class="flex flex-col gap-1 items-center">
+                ${
+                  isClosed
+                    ? '<span class="text-[11px] text-emerald-700 font-semibold">Clôturé</span>'
+                    : `<button class="text-[11px] text-emerald-700 hover:underline"
+                               onclick="closeCourrier('${row.id}')">
+                         Réponse satisfaite
+                       </button>`
+                }
+                <button class="text-[11px] text-red-600 hover:underline"
+                        onclick="deleteCourrier('${row.id}')">
+                  Supprimer
+                </button>
+              </div>
+            `;
+          } else if (isClosed) {
+            actionsHtml =
+              '<span class="text-[11px] text-emerald-700 font-semibold">Clôturé</span>';
+          }
 
           const tr = document.createElement("tr");
+          if (rowClass) tr.className = rowClass;
+
           tr.innerHTML = `
             <td class="px-2 py-2 align-top">${numero}</td>
             <td class="px-2 py-2 align-top">${dateC}</td>
@@ -623,11 +695,12 @@
             <td class="px-2 py-2 align-top max-w-xs">
               <div class="line-clamp-2">${expDest}</div>
             </td>
+            <td class="px-2 py-2 align-top">${echeance || ""}</td>
             <td class="px-2 py-2 align-top text-center">
               ${pjLinkHtml}
             </td>
             <td class="px-2 py-2 align-top text-center">
-              ${deleteHtml}
+              ${actionsHtml}
             </td>
           `;
           tbody.appendChild(tr);
@@ -661,6 +734,8 @@
       const exp_dest = (document.getElementById("exp_dest").value || "").trim();
       const observations =
         (document.getElementById("observations").value || "").trim();
+      const delaiReponse =
+        document.getElementById("delai_reponse").value || null;
       const fileInput = document.getElementById("pj");
       const file = fileInput.files[0] || null;
 
@@ -723,6 +798,8 @@
         objet,
         observations,
         piece_jointe_url: pjPath,
+        echeance: delaiReponse || null,
+        statut: null,
       };
 
       if (type === "ARRIVEE") {
@@ -744,6 +821,31 @@
       }
 
       resetForm();
+      loadCourriers();
+    }
+
+    // ========= CLOTURER =========
+    async function closeCourrier(id) {
+      if (!currentUser) return;
+      if (!currentProfile || !currentProfile.canEdit) {
+        alert("Vous n'avez pas le droit de clôturer un courrier.");
+        return;
+      }
+      if (!confirm("Marquer ce courrier comme 'réponse satisfaite' ?")) return;
+
+      showError("");
+
+      const { error } = await supa
+        .from(TABLE_NAME)
+        .update({ statut: "CLOS" })
+        .eq("id", id);
+
+      if (error) {
+        console.error(error);
+        showError("Erreur lors de la clôture : " + error.message);
+        return;
+      }
+
       loadCourriers();
     }
 
