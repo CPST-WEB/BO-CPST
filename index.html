@@ -12,184 +12,263 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-slate-100 min-h-screen">
-
   <div class="max-w-6xl mx-auto py-6 px-3">
-    <!-- En-tête -->
-    <header class="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h1 class="text-2xl font-bold text-slate-800">Bureau d'Ordre – CPST</h1>
-        <p class="text-sm text-slate-500">Gestion du courrier arrivée / départ avec pièces jointes (Supabase).</p>
-      </div>
-      <div class="text-xs text-slate-500">
-        <span class="font-semibold">Utilisateur :</span>
-        <span id="currentUserLabel">BUREAU D'ORDRE</span>
-      </div>
-    </header>
 
-    <!-- Onglets Arrivée / Départ -->
-    <div class="mb-4 inline-flex rounded-xl bg-white shadow">
-      <button id="tabArrivee"
-              class="px-4 py-2 text-sm font-semibold rounded-xl bg-slate-800 text-white"
-              onclick="setType('ARRIVEE')">
-        Courrier Arrivée
-      </button>
-      <button id="tabDepart"
-              class="px-4 py-2 text-sm font-semibold rounded-xl text-slate-700"
-              onclick="setType('DEPART')">
-        Courrier Départ
-      </button>
-    </div>
+    <!-- ========= ZONE CONNEXION ========= -->
+    <section id="loginArea" class="max-w-md mx-auto bg-white rounded-2xl shadow p-6 mb-6">
+      <h2 class="text-xl font-semibold text-slate-800 mb-1">Connexion</h2>
+      <p class="text-xs text-slate-500 mb-4">
+        Entrez votre email professionnel et votre mot de passe Supabase.
+      </p>
 
-    <!-- Message d'erreur global -->
-    <div id="globalError"
-         class="hidden mb-4 rounded-lg border border-red-300 bg-red-50 px-4 py-2 text-sm text-red-700">
-    </div>
+      <div id="loginError"
+           class="hidden mb-3 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-700"></div>
 
-    <!-- Formulaire -->
-    <section class="mb-6 bg-white rounded-2xl shadow p-4 md:p-6">
-      <h2 class="text-lg font-semibold text-slate-800 mb-3">Nouveau courrier</h2>
-
-      <form id="courrierForm" class="space-y-4" onsubmit="handleSubmit(event)">
-        <input type="hidden" id="typeCourrier" name="typeCourrier" value="ARRIVEE" />
-
-        <!-- Ligne 1 : Numéro, Date, Service -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">
-              N° d'ordre <span class="text-red-500">*</span>
-            </label>
-            <input id="numero" name="numero" type="text" required
-                   class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500"
-                   placeholder="Saisir le numéro d'ordre (unique par type)" />
-          </div>
-
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">
-              Date du courrier <span class="text-red-500">*</span>
-            </label>
-            <input id="date" name="date" type="date" required
-                   class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500" />
-          </div>
-
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">
-              Service concerné <span class="text-red-500">*</span>
-            </label>
-            <select id="service" name="service" required
-                    class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500">
-              <option value="">-- Choisir --</option>
-              <option value="DGS">DGS</option>
-              <option value="SECRETARIAT">SECRETARIAT</option>
-              <option value="PRESIDENCE">PRESIDENCE</option>
-              <option value="SMCSC">SMCSC</option>
-              <option value="DAPC">DAPC</option>
-              <option value="SATDE">SATDE</option>
-              <option value="SAFP">SAFP</option>
-              <option value="SRHAJ">SRHAJ</option>
-              <option value="BGA">BGA</option>
-              <option value="BGPA">BGPA</option>
-              <option value="BIN">BIN</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Ligne 2 : Objet -->
+      <form onsubmit="handleLogin(event)" class="space-y-3">
         <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">
-            Objet <span class="text-red-500">*</span>
-          </label>
-          <input id="objet" name="objet" type="text" required
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Email</label>
+          <input id="loginEmail" type="email" required
                  class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500"
-                 placeholder="Objet du courrier" />
+                 placeholder="ex. bo@cpst.ma" />
         </div>
-
-        <!-- Ligne 3 : Expéditeur / Destinataire -->
         <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">
-            Expéditeur / Destinataire <span class="text-red-500">*</span>
-          </label>
-          <input id="exp_dest" name="exp_dest" type="text" required
-                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500"
-                 placeholder="Nom de l'expéditeur ou du destinataire" />
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Mot de passe</label>
+          <input id="loginPassword" type="password" required
+                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500" />
         </div>
-
-        <!-- Ligne 4 : Observations -->
-        <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">
-            Observations
-          </label>
-          <textarea id="observations" name="observations" rows="2"
-                    class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500"
-                    placeholder="Remarques, instructions, etc."></textarea>
-        </div>
-
-        <!-- Ligne 5 : Pièce jointe -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">
-              Pièce jointe (PDF, image, …)
-            </label>
-            <input id="pj" type="file"
-                   class="w-full text-sm text-slate-600
-                          file:mr-2 file:rounded-lg file:border-0
-                          file:bg-slate-800 file:px-3 file:py-1.5 file:text-sm file:font-semibold
-                          file:text-white hover:file:bg-slate-700" />
-          </div>
-
-          <div class="text-xs text-slate-500">
-            <p>• Pour le courrier <strong>ARRIVEE</strong>, les PJ vont dans le bucket <code>bo_pj_arr</code>.</p>
-            <p>• Pour le courrier <strong>DEPART</strong>, les PJ vont dans le bucket <code>bo_pj_dep</code>.</p>
-          </div>
-        </div>
-
-        <!-- Boutons -->
-        <div class="flex items-center gap-3 pt-2">
-          <button type="submit"
-                  id="btnSave"
-                  class="inline-flex items-center gap-2 rounded-xl bg-slate-800 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-60 disabled:cursor-not-allowed">
-            <span>Enregistrer</span>
-            <span id="spinner" class="hidden animate-spin border-2 border-white border-r-transparent rounded-full h-4 w-4"></span>
-          </button>
-          <button type="button"
-                  onclick="resetForm()"
-                  class="text-xs text-slate-500 hover:text-slate-700">
-            Vider le formulaire
-          </button>
-        </div>
+        <button type="submit"
+                id="btnLogin"
+                class="w-full rounded-xl bg-slate-800 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-60">
+          Se connecter
+        </button>
       </form>
     </section>
 
-    <!-- Liste des courriers -->
-    <section class="bg-white rounded-2xl shadow p-4 md:p-6">
-      <div class="flex items-center justify-between mb-3">
-        <h2 class="text-lg font-semibold text-slate-800">
-          Liste des courriers <span id="labelListe">Arrivée</span>
-        </h2>
-        <span id="countBadge"
-              class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
-          0 enreg.
-        </span>
+    <!-- ========= APPLICATION PRINCIPALE ========= -->
+    <div id="app" class="hidden">
+
+      <!-- En-tête -->
+      <header class="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 class="text-2xl font-bold text-slate-800">Bureau d'Ordre – CPST</h1>
+          <p class="text-sm text-slate-500">Gestion du courrier arrivée / départ avec pièces jointes (Supabase).</p>
+        </div>
+        <div class="flex flex-col items-end gap-1 text-xs text-slate-500">
+          <div>
+            Utilisateur : <span id="currentUserLabel" class="font-semibold">–</span>
+          </div>
+          <button onclick="handleLogout()"
+                  class="text-[11px] underline text-slate-600 hover:text-slate-800">
+            Se déconnecter
+          </button>
+        </div>
+      </header>
+
+      <!-- Onglets Arrivée / Départ -->
+      <div class="mb-4 inline-flex rounded-xl bg-white shadow">
+        <button id="tabArrivee"
+                class="px-4 py-2 text-sm font-semibold rounded-xl bg-slate-800 text-white"
+                onclick="setType('ARRIVEE')">
+          Courrier Arrivée
+        </button>
+        <button id="tabDepart"
+                class="px-4 py-2 text-sm font-semibold rounded-xl text-slate-700"
+                onclick="setType('DEPART')">
+          Courrier Départ
+        </button>
       </div>
 
-      <div class="overflow-x-auto">
-        <table class="min-w-full text-xs border border-slate-200 rounded-lg overflow-hidden">
-          <thead class="bg-slate-100 text-slate-700">
-            <tr>
-              <th class="px-2 py-2 text-left">N°</th>
-              <th class="px-2 py-2 text-left">Date</th>
-              <th class="px-2 py-2 text-left">Service</th>
-              <th class="px-2 py-2 text-left">Objet</th>
-              <th class="px-2 py-2 text-left">Exp./Dest.</th>
-              <th class="px-2 py-2 text-center">PJ</th>
-              <th class="px-2 py-2 text-center">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="courriersBody" class="divide-y divide-slate-100 bg-white">
-            <!-- lignes générées en JS -->
-          </tbody>
-        </table>
+      <!-- Message d'erreur global -->
+      <div id="globalError"
+          class="hidden mb-4 rounded-lg border border-red-300 bg-red-50 px-4 py-2 text-sm text-red-700">
       </div>
-    </section>
+
+      <!-- Formulaire -->
+      <section class="mb-6 bg-white rounded-2xl shadow p-4 md:p-6">
+        <h2 class="text-lg font-semibold text-slate-800 mb-3">Nouveau courrier</h2>
+
+        <form id="courrierForm" class="space-y-4" onsubmit="handleSubmit(event)">
+          <input type="hidden" id="typeCourrier" name="typeCourrier" value="ARRIVEE" />
+
+          <!-- Ligne 1 : Numéro, Date, Service -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">
+                N° d'ordre <span class="text-red-500">*</span>
+              </label>
+              <input id="numero" name="numero" type="text" required
+                     class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500"
+                     placeholder="Saisir le numéro d'ordre (unique par type)" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">
+                Date du courrier <span class="text-red-500">*</span>
+              </label>
+              <input id="date" name="date" type="date" required
+                     class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">
+                Service concerné <span class="text-red-500">*</span>
+              </label>
+              <select id="service" name="service" required
+                      class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500">
+                <option value="">-- Choisir --</option>
+                <option value="DGS">DGS</option>
+                <option value="SECRETARIAT">SECRETARIAT</option>
+                <option value="PRESIDENCE">PRESIDENCE</option>
+                <option value="SMCSC">SMCSC</option>
+                <option value="DAPC">DAPC</option>
+                <option value="SATDE">SATDE</option>
+                <option value="SAFP">SAFP</option>
+                <option value="SRHAJ">SRHAJ</option>
+                <option value="BGA">BGA</option>
+                <option value="BGPA">BGPA</option>
+                <option value="BIN">BIN</option>
+              </select>
+              <p id="serviceInfo" class="mt-1 text-[10px] text-slate-400"></p>
+            </div>
+          </div>
+
+          <!-- Ligne 2 : Objet -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">
+              Objet <span class="text-red-500">*</span>
+            </label>
+            <input id="objet" name="objet" type="text" required
+                   class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500"
+                   placeholder="Objet du courrier" />
+          </div>
+
+          <!-- Ligne 3 : Expéditeur / Destinataire -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">
+              Expéditeur / Destinataire <span class="text-red-500">*</span>
+            </label>
+            <input id="exp_dest" name="exp_dest" type="text" required
+                   class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500"
+                   placeholder="Nom de l'expéditeur ou du destinataire" />
+          </div>
+
+          <!-- Ligne 4 : Observations -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">
+              Observations
+            </label>
+            <textarea id="observations" name="observations" rows="2"
+                      class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500"
+                      placeholder="Remarques, instructions, etc."></textarea>
+          </div>
+
+          <!-- Ligne 5 : Pièce jointe -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">
+                Pièce jointe (PDF, image, …)
+              </label>
+              <input id="pj" type="file"
+                     class="w-full text-sm text-slate-600
+                            file:mr-2 file:rounded-lg file:border-0
+                            file:bg-slate-800 file:px-3 file:py-1.5 file:text-sm file:font-semibold
+                            file:text-white hover:file:bg-slate-700" />
+            </div>
+
+            <div class="text-xs text-slate-500">
+              <p>• Pour le courrier <strong>ARRIVEE</strong>, les PJ vont dans le bucket <code>bo_pj_arr</code>.</p>
+              <p>• Pour le courrier <strong>DEPART</strong>, les PJ vont dans le bucket <code>bo_pj_dep</code>.</p>
+            </div>
+          </div>
+
+          <!-- Boutons -->
+          <div class="flex items-center gap-3 pt-2">
+            <button type="submit"
+                    id="btnSave"
+                    class="inline-flex items-center gap-2 rounded-xl bg-slate-800 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-60 disabled:cursor-not-allowed">
+              <span>Enregistrer</span>
+              <span id="spinner" class="hidden animate-spin border-2 border-white border-r-transparent rounded-full h-4 w-4"></span>
+            </button>
+            <button type="button"
+                    onclick="resetForm()"
+                    class="text-xs text-slate-500 hover:text-slate-700">
+              Vider le formulaire
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- FILTRES + STATISTIQUES -->
+      <section class="mb-3 flex flex-col md:flex-row md:items-end md:justify-between gap-3">
+        <div class="bg-white rounded-2xl shadow p-3 flex-1">
+          <h3 class="text-xs font-semibold text-slate-600 mb-2">Filtrer par date</h3>
+          <div class="flex flex-wrap gap-2 items-center">
+            <div>
+              <label class="block text-[11px] text-slate-500 mb-1">Du</label>
+              <input id="filterDateFrom" type="date"
+                     class="rounded-lg border border-slate-300 px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-slate-500" />
+            </div>
+            <div>
+              <label class="block text-[11px] text-slate-500 mb-1">Au</label>
+              <input id="filterDateTo" type="date"
+                     class="rounded-lg border border-slate-300 px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-slate-500" />
+            </div>
+            <button type="button"
+                    onclick="loadCourriers()"
+                    class="mt-4 md:mt-0 rounded-xl bg-slate-800 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-700">
+              Appliquer le filtre
+            </button>
+            <button type="button"
+                    onclick="clearDateFilters()"
+                    class="mt-4 md:mt-0 text-[11px] text-slate-500 hover:text-slate-700 underline">
+              Réinitialiser
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow p-3 w-full md:w-64">
+          <h3 class="text-xs font-semibold text-slate-600 mb-2">Statistiques (période filtrée)</h3>
+          <p class="text-[11px] text-slate-500 mb-1">
+            Total courriers : <span id="statTotal" class="font-semibold text-slate-800">0</span>
+          </p>
+          <p class="text-[11px] text-slate-500">
+            Pour le service : <span id="statService" class="font-semibold text-slate-800">–</span>
+          </p>
+        </div>
+      </section>
+
+      <!-- Liste des courriers -->
+      <section class="bg-white rounded-2xl shadow p-4 md:p-6">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-lg font-semibold text-slate-800">
+            Liste des courriers <span id="labelListe">Arrivée</span>
+          </h2>
+          <span id="countBadge"
+                class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+            0 enreg.
+          </span>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="min-w-full text-xs border border-slate-200 rounded-lg overflow-hidden">
+            <thead class="bg-slate-100 text-slate-700">
+              <tr>
+                <th class="px-2 py-2 text-left">N°</th>
+                <th class="px-2 py-2 text-left">Date</th>
+                <th class="px-2 py-2 text-left">Service</th>
+                <th class="px-2 py-2 text-left">Objet</th>
+                <th class="px-2 py-2 text-left">Exp./Dest.</th>
+                <th class="px-2 py-2 text-center">PJ</th>
+                <th class="px-2 py-2 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="courriersBody" class="divide-y divide-slate-100 bg-white">
+              <!-- lignes générées en JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
   </div>
 
   <!-- ====================== SCRIPT JS ====================== -->
@@ -198,18 +277,40 @@
     const SUPABASE_URL = "https://ltymaadmjdqpvmpjbxbr.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx0eW1hYWRtamRxcHZtcGpieGJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxNTUxMjYsImV4cCI6MjA3ODczMTEyNn0.K7f-eB2mVd-2lomo9-qI4xWW7X3sFDOzx1ukB4OAgmo";
 
-    const TABLE_NAME = "courriers";      // ✅ ta table
+    const TABLE_NAME = "courriers";
     const BUCKET_ARR = "bo_pj_arr";
     const BUCKET_DEP = "bo_pj_dep";
 
     const { createClient } = supabase;
     const supa = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // ========= ÉTAT COURANT =========
+    // ========= PROFILS UTILISATEURS =========
+    // ❗ Adapte ces emails / services à tes vrais comptes Supabase Auth
+    const USER_PROFILES = {
+      "bo@cpst.ma": {
+        label: "BUREAU D'ORDRE",
+        service: "SECRETARIAT",
+        canSeeAll: false
+      },
+      "dgs@cpst.ma": {
+        label: "DGS",
+        service: "DGS",
+        canSeeAll: true // voit tout
+      },
+      "presidente@cpst.ma": {
+        label: "PRÉSIDENTE",
+        service: "PRESIDENCE",
+        canSeeAll: true // voit tout
+      },
+      // exemple : "safp@cpst.ma": { label: "SAFP", service: "SAFP", canSeeAll: false },
+    };
+
+    let currentUser = null;
+    let currentProfile = null;
     let currentType = "ARRIVEE"; // ARRIVEE ou DEPART
     let isSaving = false;
 
-    // ========= UTILITAIRES UI =========
+    // ========= GESTION UI =========
     function showError(msg) {
       const box = document.getElementById("globalError");
       if (!msg) {
@@ -234,6 +335,9 @@
       document.getElementById("typeCourrier").value = currentType;
       const today = new Date().toISOString().slice(0, 10);
       document.getElementById("date").value = today;
+
+      // si l'utilisateur ne peut voir que son service, on fige le champ
+      applyServiceLock();
     }
 
     function setType(type) {
@@ -263,10 +367,94 @@
 
     function updateCount(count) {
       document.getElementById("countBadge").textContent = count + " enreg.";
+      document.getElementById("statTotal").textContent = count;
+      document.getElementById("statService").textContent =
+        currentProfile && currentProfile.canSeeAll
+          ? "Tous"
+          : (currentProfile?.service || "–");
+    }
+
+    function clearDateFilters() {
+      document.getElementById("filterDateFrom").value = "";
+      document.getElementById("filterDateTo").value = "";
+      loadCourriers();
+    }
+
+    function applyServiceLock() {
+      const serviceSelect = document.getElementById("service");
+      const info = document.getElementById("serviceInfo");
+      if (!currentProfile) return;
+
+      if (!currentProfile.canSeeAll && currentProfile.service) {
+        serviceSelect.value = currentProfile.service;
+        serviceSelect.disabled = true;
+        info.textContent = "Votre service est fixé à " + currentProfile.service + ".";
+      } else {
+        serviceSelect.disabled = false;
+        info.textContent = "DGS / PRÉSIDENTE peuvent choisir n'importe quel service.";
+      }
+    }
+
+    // ========= AUTH =========
+    function setSession(user) {
+      currentUser = user || null;
+      const app = document.getElementById("app");
+      const loginArea = document.getElementById("loginArea");
+
+      if (currentUser) {
+        const profile = USER_PROFILES[currentUser.email] || {
+          label: currentUser.email,
+          service: null,
+          canSeeAll: true
+        };
+        currentProfile = profile;
+
+        document.getElementById("currentUserLabel").textContent =
+          profile.label + (profile.service ? " (" + profile.service + ")" : "");
+
+        loginArea.classList.add("hidden");
+        app.classList.remove("hidden");
+
+        applyServiceLock();
+        loadCourriers();
+      } else {
+        currentProfile = null;
+        app.classList.add("hidden");
+        loginArea.classList.remove("hidden");
+      }
+    }
+
+    async function handleLogin(event) {
+      event.preventDefault();
+      document.getElementById("loginError").classList.add("hidden");
+      const email = document.getElementById("loginEmail").value.trim();
+      const password = document.getElementById("loginPassword").value;
+
+      document.getElementById("btnLogin").disabled = true;
+
+      const { data, error } = await supa.auth.signInWithPassword({ email, password });
+
+      document.getElementById("btnLogin").disabled = false;
+
+      if (error) {
+        const box = document.getElementById("loginError");
+        box.textContent = "Connexion impossible : " + error.message;
+        box.classList.remove("hidden");
+        return;
+      }
+
+      setSession(data.user);
+    }
+
+    async function handleLogout() {
+      await supa.auth.signOut();
+      setSession(null);
     }
 
     // ========= CHARGER LA LISTE =========
     async function loadCourriers() {
+      if (!currentUser) return;
+
       showError("");
       const tbody = document.getElementById("courriersBody");
       tbody.innerHTML = `
@@ -278,11 +466,18 @@
       `;
 
       try {
-        const { data, error } = await supa
+        let query = supa
           .from(TABLE_NAME)
           .select("*")
           .eq("type", currentType)
           .order("date", { ascending: false });
+
+        const from = document.getElementById("filterDateFrom").value;
+        const to = document.getElementById("filterDateTo").value;
+        if (from) query = query.gte("date", from);
+        if (to) query = query.lte("date", to);
+
+        const { data, error } = await query;
 
         if (error) {
           console.error(error);
@@ -292,7 +487,13 @@
           return;
         }
 
-        if (!data || data.length === 0) {
+        // Filtre par service côté appli
+        let filtered = data || [];
+        if (currentProfile && !currentProfile.canSeeAll && currentProfile.service) {
+          filtered = filtered.filter(row => (row.service || "") === currentProfile.service);
+        }
+
+        if (!filtered.length) {
           tbody.innerHTML = `
             <tr>
               <td colspan="7" class="px-3 py-3 text-center text-xs text-slate-400">
@@ -304,33 +505,30 @@
           return;
         }
 
-        updateCount(data.length);
+        updateCount(filtered.length);
         tbody.innerHTML = "";
 
-        for (const row of data) {
+        for (const row of filtered) {
           const numero = row.numero || "";
           const dateC = row.date || "";
           const service = row.service || "";
           const objet = row.objet || "";
-          const expDest = currentType === "ARRIVEE"
-            ? (row.expediteur || "")
-            : (row.destinataire || "");
+          const expDest =
+            currentType === "ARRIVEE"
+              ? (row.expediteur || "")
+              : (row.destinataire || "");
           const pjPath = row.piece_jointe_url || null;
           const bucket = currentType === "ARRIVEE" ? BUCKET_ARR : BUCKET_DEP;
 
           let pjLinkHtml = "-";
           if (pjPath) {
-            const { data: pub } = supa
-              .storage
-              .from(bucket)
-              .getPublicUrl(pjPath);
+            const { data: pub } = supa.storage.from(bucket).getPublicUrl(pjPath);
             if (pub && pub.publicUrl) {
               pjLinkHtml = `<a href="${pub.publicUrl}" target="_blank" class="text-xs text-slate-700 underline">Ouvrir</a>`;
             }
           }
 
           const tr = document.createElement("tr");
-
           tr.innerHTML = `
             <td class="px-2 py-2 align-top">${numero}</td>
             <td class="px-2 py-2 align-top">${dateC || ""}</td>
@@ -351,7 +549,6 @@
               </button>
             </td>
           `;
-
           tbody.appendChild(tr);
         }
       } catch (err) {
@@ -365,14 +562,15 @@
     // ========= ENREGISTRER =========
     async function handleSubmit(event) {
       event.preventDefault();
-      if (isSaving) return;
+      if (!currentUser || isSaving) return;
 
       showError("");
 
       const type = currentType;
       const numero = (document.getElementById("numero").value || "").trim();
       const date = document.getElementById("date").value;
-      const service = document.getElementById("service").value;
+      const serviceSelect = document.getElementById("service");
+      let service = serviceSelect.value;
       const objet = (document.getElementById("objet").value || "").trim();
       const exp_dest = (document.getElementById("exp_dest").value || "").trim();
       const observations = (document.getElementById("observations").value || "").trim();
@@ -382,6 +580,11 @@
       if (!numero || !date || !service || !objet || !exp_dest) {
         showError("Merci de remplir tous les champs obligatoires (*).");
         return;
+      }
+
+      // Pour les utilisateurs limités, on force le service
+      if (currentProfile && !currentProfile.canSeeAll && currentProfile.service) {
+        service = currentProfile.service;
       }
 
       setLoading(true);
@@ -422,21 +625,20 @@
           setLoading(false);
           return;
         }
-        pjPath = upData.path; // stocké dans piece_jointe_url
+        pjPath = upData.path;
       }
 
       // 3. Insert dans la table courriers
       const insertPayload = {
-        type,                     // ARRIVEE / DEPART
+        type,
         numero,
-        date,                     // colonne 'date'
+        date,
         service,
         objet,
         observations,
         piece_jointe_url: pjPath
       };
 
-      // Gestion des colonnes expediteur / destinataire
       if (type === "ARRIVEE") {
         insertPayload.expediteur = exp_dest;
         insertPayload.destinataire = "";
@@ -445,11 +647,9 @@
         insertPayload.destinataire = exp_dest;
       }
 
-      const { data, error } = await supa
+      const { error } = await supa
         .from(TABLE_NAME)
-        .insert(insertPayload)
-        .select()
-        .single();
+        .insert(insertPayload);
 
       setLoading(false);
 
@@ -465,6 +665,7 @@
 
     // ========= SUPPRIMER =========
     async function deleteCourrier(id) {
+      if (!currentUser) return;
       if (!confirm("Supprimer définitivement ce courrier ?")) return;
 
       showError("");
@@ -484,9 +685,13 @@
     }
 
     // ========= INIT =========
-    document.addEventListener("DOMContentLoaded", () => {
+    document.addEventListener("DOMContentLoaded", async () => {
       const today = new Date().toISOString().slice(0, 10);
       document.getElementById("date").value = today;
+
+      // Vérifier s'il y a déjà une session
+      const { data } = await supa.auth.getUser();
+      setSession(data?.user ?? null);
 
       setType("ARRIVEE");
     });
