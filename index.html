@@ -626,12 +626,32 @@ if (pjPath) {
             <td class="px-2 py-2 align-top text-center">
               ${pjLinkHtml}
             </td>
-            <td class="px-2 py-2 align-top text-center">
-              <button class="text-[11px] text-red-600 hover:underline"
-                      onclick="deleteCourrier('${row.id}')">
-                Supprimer
-              </button>
-            </td>
+          const canEdit = currentProfile && currentProfile.canEdit;
+const deleteHtml = canEdit
+  ? `<button class="text-[11px] text-red-600 hover:underline"
+             onclick="deleteCourrier('${row.id}')">
+       Supprimer
+     </button>`
+  : "";
+
+tr.innerHTML = `
+  <td class="px-2 py-2 align-top">${numero}</td>
+  <td class="px-2 py-2 align-top">${dateC}</td>
+  <td class="px-2 py-2 align-top">${service}</td>
+  <td class="px-2 py-2 align-top max-w-xs">
+      <div class="line-clamp-2">${objet}</div>
+  </td>
+  <td class="px-2 py-2 align-top max-w-xs">
+      <div class="line-clamp-2">${expDest}</div>
+  </td>
+  <td class="px-2 py-2 align-top text-center">
+      ${pjLinkHtml}
+  </td>
+  <td class="px-2 py-2 align-top text-center">
+      ${deleteHtml}
+  </td>
+`;
+
           `;
           tbody.appendChild(tr);
         }
