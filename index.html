@@ -11,11 +11,11 @@
   <!-- Supabase JS v2 (UMD globale "supabase") -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.48.0/dist/umd/supabase.js"></script>
 </head>
-<body class="bg-slate-100 min-h-screen">
+<body class="bg-gradient-to-br from-slate-100 via-sky-50 to-slate-200 min-h-screen">
   <div class="max-w-6xl mx-auto py-6 px-3">
 
     <!-- ========= ZONE CONNEXION ========= -->
-    <section id="loginArea" class="max-w-md mx-auto bg-white rounded-2xl shadow p-6 mb-6">
+    <section id="loginArea" class="max-w-md mx-auto bg-white/95 border border-sky-100 rounded-2xl shadow-lg p-6 mb-6">
       <h2 class="text-xl font-semibold text-slate-800 mb-1">Connexion</h2>
       <p class="text-xs text-slate-500 mb-4">
         Entrez votre email professionnel et votre mot de passe Supabase.
@@ -28,17 +28,17 @@
         <div>
           <label class="block text-xs font-semibold text-slate-600 mb-1">Email</label>
           <input id="loginEmail" type="email" required
-                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500"
+                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
                  placeholder="ex. bo@cpst.ma" />
         </div>
         <div>
           <label class="block text-xs font-semibold text-slate-600 mb-1">Mot de passe</label>
           <input id="loginPassword" type="password" required
-                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500" />
+                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
         </div>
         <button type="submit"
                 id="btnLogin"
-                class="w-full rounded-xl bg-slate-800 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-60">
+                class="w-full rounded-xl bg-sky-700 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-600 disabled:opacity-60">
           Se connecter
         </button>
       </form>
@@ -50,22 +50,28 @@
       <!-- En-tête -->
       <header class="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 class="text-2xl font-bold text-slate-800">Bureau d'Ordre – CPST</h1>
-          <p class="text-sm text-slate-500">Gestion du courrier arrivée / départ avec pièces jointes (Supabase).</p>
+          <h1 class="text-2xl font-bold text-slate-800">
+            <span class="bg-gradient-to-r from-sky-600 to-slate-800 bg-clip-text text-transparent">
+              Bureau d'Ordre – CPST
+            </span>
+          </h1>
+          <p class="text-sm text-slate-500">
+            Gestion du courrier arrivée / départ avec pièces jointes (Supabase).
+          </p>
         </div>
-        <div class="flex flex-col items-end gap-1 text-xs text-slate-500">
+        <div class="flex flex-col items-end gap-1 text-xs text-slate-500 bg-white/80 border border-sky-100 rounded-xl px-3 py-2 shadow-sm">
           <div>
-            Utilisateur : <span id="currentUserLabel" class="font-semibold">–</span>
+            Utilisateur : <span id="currentUserLabel" class="font-semibold text-slate-800">–</span>
           </div>
           <button onclick="handleLogout()"
-                  class="text-[11px] underline text-slate-600 hover:text-slate-800">
+                  class="text-[11px] underline text-slate-600 hover:text-sky-700">
             Se déconnecter
           </button>
         </div>
       </header>
 
       <!-- Onglets Arrivée / Départ -->
-      <div class="mb-4 inline-flex rounded-xl bg-white shadow">
+      <div class="mb-4 inline-flex rounded-xl bg-white/90 border border-sky-100 shadow-sm">
         <button id="tabArrivee"
                 class="px-4 py-2 text-sm font-semibold rounded-xl bg-slate-800 text-white"
                 onclick="setType('ARRIVEE')">
@@ -84,7 +90,7 @@
       </div>
 
       <!-- Formulaire -->
-      <section id="formSection" class="mb-6 bg-white rounded-2xl shadow p-4 md:p-6">
+      <section id="formSection" class="mb-6 bg-white/95 border border-sky-100 rounded-2xl shadow p-4 md:p-6">
         <h2 class="text-lg font-semibold text-slate-800 mb-3">Nouveau courrier</h2>
 
         <form id="courrierForm" class="space-y-4" onsubmit="handleSubmit(event)">
@@ -97,7 +103,7 @@
                 N° d'ordre <span class="text-red-500">*</span>
               </label>
               <input id="numero" name="numero" type="text" required
-                     class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500"
+                     class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
                      placeholder="Saisir le numéro d'ordre (unique par type)" />
             </div>
 
@@ -106,7 +112,7 @@
                 Date du courrier <span class="text-red-500">*</span>
               </label>
               <input id="date" name="date" type="date" required
-                     class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500" />
+                     class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
             </div>
 
             <div>
@@ -114,7 +120,7 @@
                 Service concerné <span class="text-red-500">*</span>
               </label>
               <select id="service" name="service" required
-                      class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500">
+                      class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
                 <option value="">-- Choisir --</option>
                 <option value="DGS">DGS</option>
                 <option value="SECRETARIAT">SECRETARIAT</option>
@@ -138,7 +144,7 @@
               Objet <span class="text-red-500">*</span>
             </label>
             <input id="objet" name="objet" type="text" required
-                   class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500"
+                   class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
                    placeholder="Objet du courrier" />
           </div>
 
@@ -148,7 +154,7 @@
               Expéditeur / Destinataire <span class="text-red-500">*</span>
             </label>
             <input id="exp_dest" name="exp_dest" type="text" required
-                   class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500"
+                   class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
                    placeholder="Nom de l'expéditeur ou du destinataire" />
           </div>
 
@@ -158,7 +164,7 @@
               Observations
             </label>
             <textarea id="observations" name="observations" rows="2"
-                      class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500"
+                      class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
                       placeholder="Remarques, instructions, etc."></textarea>
           </div>
 
@@ -168,9 +174,9 @@
               Délai de réponse
             </label>
             <input id="delai_reponse" name="delai_reponse" type="date"
-                   class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500" />
+                   class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
             <p class="mt-1 text-[10px] text-slate-400">
-              Utilisé pour les alertes de suivi (DGS) : jaune J-3, orange J-2, rouge J-1.
+              Utilisé pour les alertes de suivi : jaune J-3, orange J-2, rouge J-1 (tant que non clôturé).
             </p>
           </div>
 
@@ -183,8 +189,8 @@
               <input id="pj" type="file"
                      class="w-full text-sm text-slate-600
                             file:mr-2 file:rounded-lg file:border-0
-                            file:bg-slate-800 file:px-3 file:py-1.5 file:text-sm file:font-semibold
-                            file:text-white hover:file:bg-slate-700" />
+                            file:bg-sky-700 file:px-3 file:py-1.5 file:text-sm file:font-semibold
+                            file:text-white hover:file:bg-sky-600" />
             </div>
 
             <div class="text-xs text-slate-500">
@@ -197,13 +203,13 @@
           <div class="flex items-center gap-3 pt-2">
             <button type="submit"
                     id="btnSave"
-                    class="inline-flex items-center gap-2 rounded-xl bg-slate-800 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-60 disabled:cursor-not-allowed">
+                    class="inline-flex items-center gap-2 rounded-xl bg-sky-700 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-600 disabled:opacity-60 disabled:cursor-not-allowed">
               <span>Enregistrer</span>
               <span id="spinner" class="hidden animate-spin border-2 border-white border-r-transparent rounded-full h-4 w-4"></span>
             </button>
             <button type="button"
                     onclick="resetForm()"
-                    class="text-xs text-slate-500 hover:text-slate-700">
+                    class="text-xs text-slate-500 hover:text-sky-700">
               Vider le formulaire
             </button>
           </div>
@@ -212,58 +218,58 @@
 
       <!-- FILTRES + STATISTIQUES -->
       <section class="mb-3 flex flex-col md:flex-row md:items-end md:justify-between gap-3">
-        <div class="bg-white rounded-2xl shadow p-3 flex-1">
-          <h3 class="text-xs font-semibold text-slate-600 mb-2">Filtrer par date</h3>
+        <div class="bg-white/95 border border-sky-100 rounded-2xl shadow p-3 flex-1">
+          <h3 class="text-xs font-semibold text-slate-700 mb-2">Filtrer par date</h3>
           <div class="flex flex-wrap gap-2 items-center">
             <div>
               <label class="block text-[11px] text-slate-500 mb-1">Du</label>
               <input id="filterDateFrom" type="date"
-                     class="rounded-lg border border-slate-300 px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-slate-500" />
+                     class="rounded-lg border border-slate-300 px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500" />
             </div>
             <div>
               <label class="block text-[11px] text-slate-500 mb-1">Au</label>
               <input id="filterDateTo" type="date"
-                     class="rounded-lg border border-slate-300 px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-slate-500" />
+                     class="rounded-lg border border-slate-300 px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500" />
             </div>
             <button type="button"
                     onclick="loadCourriers()"
-                    class="mt-4 md:mt-0 rounded-xl bg-slate-800 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-700">
+                    class="mt-4 md:mt-0 rounded-xl bg-sky-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-sky-600">
               Appliquer le filtre
             </button>
             <button type="button"
                     onclick="clearDateFilters()"
-                    class="mt-4 md:mt-0 text-[11px] text-slate-500 hover:text-slate-700 underline">
+                    class="mt-4 md:mt-0 text-[11px] text-slate-500 hover:text-sky-700 underline">
               Réinitialiser
             </button>
           </div>
         </div>
 
-        <div class="bg-white rounded-2xl shadow p-3 w-full md:w-64">
-          <h3 class="text-xs font-semibold text-slate-600 mb-2">Statistiques (période filtrée)</h3>
+        <div class="bg-white/95 border border-sky-100 rounded-2xl shadow p-3 w-full md:w-64">
+          <h3 class="text-xs font-semibold text-slate-700 mb-2">Statistiques (période filtrée)</h3>
           <p class="text-[11px] text-slate-500 mb-1">
-            Total courriers : <span id="statTotal" class="font-semibold text-slate-800">0</span>
+            Total courriers : <span id="statTotal" class="font-semibold text-sky-800">0</span>
           </p>
           <p class="text-[11px] text-slate-500">
-            Pour le service : <span id="statService" class="font-semibold text-slate-800">–</span>
+            Pour le service : <span id="statService" class="font-semibold text-sky-800">–</span>
           </p>
         </div>
       </section>
 
       <!-- Liste des courriers -->
-      <section class="bg-white rounded-2xl shadow p-4 md:p-6">
+      <section class="bg-white/95 border border-sky-100 rounded-2xl shadow p-4 md:p-6">
         <div class="flex items-center justify-between mb-3">
           <h2 class="text-lg font-semibold text-slate-800">
             Liste des courriers <span id="labelListe">Arrivée</span>
           </h2>
           <span id="countBadge"
-                class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+                class="inline-flex items-center rounded-full bg-sky-50 px-3 py-1 text-xs font-medium text-sky-800 border border-sky-100">
             0 enreg.
           </span>
         </div>
 
         <div class="overflow-x-auto">
           <table class="min-w-full text-xs border border-slate-200 rounded-lg overflow-hidden">
-            <thead class="bg-slate-100 text-slate-700">
+            <thead class="bg-sky-50 text-slate-700">
               <tr>
                 <th class="px-2 py-2 text-left">N°</th>
                 <th class="px-2 py-2 text-left">Date</th>
@@ -302,7 +308,7 @@
     const USER_PROFILES = {
       "bo@cpst.ma": {
         label: "BUREAU D'ORDRE",
-        service: "BUREAU D'ORDRE",
+        service: "SECRETARIAT",
         canSeeAll: true,
         canEdit: true, // seul BO peut éditer
       },
@@ -461,14 +467,17 @@
       } else {
         serviceSelect.disabled = false;
         info.textContent =
-          "DGS / PRÉSIDENTE peuvent choisir n'importe quel service.";
+          "DGS / PRÉSIDENTE / BO peuvent choisir n'importe quel service.";
       }
     }
 
     function toggleEditRights() {
       const canEdit = !!(currentProfile && currentProfile.canEdit);
-      const isServiceOnly =
-        currentProfile && !currentProfile.canEdit && !currentProfile.canSeeAll;
+      const isManager =
+        currentProfile &&
+        (currentProfile.email === "bo@cpst.ma" ||
+         currentProfile.email === "dgs@cpst.ma" ||
+         currentProfile.email === "presidente@cpst.ma");
 
       const btnSave = document.getElementById("btnSave");
       const formSection = document.getElementById("formSection");
@@ -477,7 +486,8 @@
         btnSave.classList.toggle("hidden", !canEdit);
       }
       if (formSection) {
-        formSection.classList.toggle("hidden", !!isServiceOnly);
+        // Formulaire visible uniquement pour BO, DGS, PRÉSIDENTE
+        formSection.classList.toggle("hidden", !isManager);
       }
     }
 
@@ -628,18 +638,13 @@
               .createSignedUrl(pjPath, 60 * 60); // 1 heure
 
             if (!urlErr && pub && pub.signedUrl) {
-              pjLinkHtml = `<a href="${pub.signedUrl}" target="_blank" class="text-xs text-slate-700 underline">Ouvrir</a>`;
+              pjLinkHtml = `<a href="${pub.signedUrl}" target="_blank" class="text-xs text-sky-700 underline">Ouvrir</a>`;
             }
           }
 
-          // --- Couleur d'alerte pour la DGS ---
+          // --- Couleur d'alerte pour tout le monde (si non clôturé) ---
           let rowClass = "";
-          if (
-            currentProfile &&
-            currentProfile.service === "DGS" &&
-            echeance &&
-            statut !== "CLOS"
-          ) {
+          if (echeance && statut !== "CLOS") {
             const dDue = new Date(echeance);
             dDue.setHours(0, 0, 0, 0);
             const diffDays = Math.floor(
