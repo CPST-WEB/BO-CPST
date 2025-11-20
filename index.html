@@ -286,72 +286,97 @@
 
     // ========= PROFILS UTILISATEURS =========
     // ❗ Adapte ces emails / services à tes vrais comptes Supabase Auth
-   const USER_PROFILES = {
+const USER_PROFILES = {
   "bo@cpst.ma": {
     label: "BUREAU D'ORDRE",
-    service: "BUREAU D'ORDRE",
-    canSeeAll: true   // voit tout
+    service: "SECRETARIAT",
+    canSeeAll: true,
+    canEdit: true       // 👉 seul BO peut éditer
   },
   "dgs@cpst.ma": {
     label: "DGS",
     service: "DGS",
-    canSeeAll: true   // peut voir tous les courriers
+    canSeeAll: true,
+    canEdit: false      // voit tout, mais pas d'édition
   },
   "presidente@cpst.ma": {
     label: "PRÉSIDENTE",
     service: "PRESIDENCE",
-    canSeeAll: true   // peut voir tous les courriers
+    canSeeAll: true,
+    canEdit: false
   },
   "secretariat@cpst.ma": {
     label: "SECRETARIAT",
     service: "SECRETARIAT",
-    canSeeAll: false
+    canSeeAll: false,
+    canEdit: false
   },
   "dapc@cpst.ma": {
     label: "DAPC",
     service: "DAPC",
-    canSeeAll: false
+    canSeeAll: false,
+    canEdit: false
   },
   "safp@cpst.ma": {
     label: "SAFP",
     service: "SAFP",
-    canSeeAll: false
+    canSeeAll: false,
+    canEdit: false
   },
   "smcsc@cpst.ma": {
     label: "SMCSC",
     service: "SMCSC",
-    canSeeAll: false
+    canSeeAll: false,
+    canEdit: false
   },
   "satde@cpst.ma": {
     label: "SATDE",
     service: "SATDE",
-    canSeeAll: false
+    canSeeAll: false,
+    canEdit: false
   },
   "bgpa@cpst.ma": {
     label: "BGPA",
     service: "BGPA",
-    canSeeAll: false
+    canSeeAll: false,
+    canEdit: false
   },
   "bga@cpst.ma": {
     label: "BGA",
     service: "BGA",
-    canSeeAll: false
+    canSeeAll: false,
+    canEdit: false
   },
   "srhaj@cpst.ma": {
     label: "SRHAJ",
     service: "SRHAJ",
-    canSeeAll: false
+    canSeeAll: false,
+    canEdit: false
   },
   "bid@cpst.ma": {
     label: "BID",
     service: "BID",
-    canSeeAll: false
+    canSeeAll: false,
+    canEdit: false
   }
 };
 
 
+
     let currentUser = null;
     let currentProfile = null;
+    function toggleEditRights() {
+  const canEdit = !!(currentProfile && currentProfile.canEdit);
+
+  // Bouton enregistrer
+  const btnSave = document.getElementById("btnSave");
+  if (btnSave) {
+    btnSave.classList.toggle("hidden", !canEdit);
+  }
+
+  // Boutons supprimer dans la liste (gérés dans loadCourriers)
+}
+
     let currentType = "ARRIVEE"; // ARRIVEE ou DEPART
     let isSaving = false;
 
@@ -446,25 +471,33 @@
       const app = document.getElementById("app");
       const loginArea = document.getElementById("loginArea");
 
-      if (currentUser) {
-        const profile = USER_PROFILES[currentUser.email] || {
-          label: currentUser.email,
-          service: null,
-          canSeeAll: true
-        };
-        currentProfile = profile;
+    if (currentUser) {
+    const profile = USER_PROFILES[currentUser.email] || {
+        label: currentUser.email,
+        service: null,
+        canSeeAll: true
+    };
 
-        document.getElementById("currentUserLabel").textContent =
-          profile.label + (profile.service ? " (" + profile.service + ")" : "");
+    currentProfile = profile;
 
-        loginArea.classList.add("hidden");
-        app.classList.remove("hidden");
+    document.getElementById("currentUserLabel").textContent =
+        profile.label + (profile.service ? " (" + profile.service + ")" : "");
 
-        applyServiceLock();
-        loadCourriers();
-      } else {
-        currentProfile = null;
-        app.classList.add("hidden");
+    loginArea.classList.add("hidden");
+    app.classList.remove("hidden");
+
+    applyServiceLock();
+    toggleEditRights();
+
+    // 👉 IMPORTANT : un seul appel
+    loadCourriers();
+
+} else {
+    currentProfile = null;
+    app.classList.add("hidden");
+    loginArea.classList.remove("hidden");
+}
+
         loginArea.classList.remove("hidden");
       }
     }
@@ -614,6 +647,10 @@ if (pjPath) {
     async function handleSubmit(event) {
       event.preventDefault();
       if (!currentUser || isSaving) return;
+if (!currentProfile || !currentProfile.canEdit) {
+  showError("Vous n'avez pas le droit d'enregistrer un courrier.");
+  return;
+}
 
       showError("");
 
@@ -715,6 +752,11 @@ if (pjPath) {
     }
 
     // ========= SUPPRIMER =========
+    if (!currentProfile || !currentProfile.canEdit) {
+  alert("Vous n'avez pas le droit de supprimer un courrier.");
+  return;
+}
+
     async function deleteCourrier(id) {
       if (!currentUser) return;
       if (!confirm("Supprimer définitivement ce courrier ?")) return;
