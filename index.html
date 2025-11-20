@@ -141,7 +141,7 @@
           <!-- Ligne 2 : Objet -->
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">
-              Objet <span class="text-red-500">*</span>
+              L'objet du courrier <span class="text-red-500">*</span>
             </label>
             <input id="objet" name="objet" type="text" required
                    class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
@@ -166,6 +166,20 @@
             <textarea id="observations" name="observations" rows="2"
                       class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
                       placeholder="Remarques, instructions, etc."></textarea>
+          </div>
+
+          <!-- Ligne 4 bis : Référence -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">
+              Référence
+            </label>
+            <input id="reference" name="reference" type="text"
+                   class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                   placeholder="N° d'ordre du courrier lié (ex : 11)" />
+            <p class="mt-1 text-[10px] text-slate-400">
+              Exemple : si une réponse au courrier ARRIVEE n° 11 est enregistrée en DEPART avec la référence 11,
+              le courrier n° 11 sera automatiquement clôturé (plus d’alerte).
+            </p>
           </div>
 
           <!-- Ligne 5 : Délai de réponse -->
@@ -276,6 +290,7 @@
                 <th class="px-2 py-2 text-left">Service</th>
                 <th class="px-2 py-2 text-left">Objet</th>
                 <th class="px-2 py-2 text-left">Exp./Dest.</th>
+                <th class="px-2 py-2 text-left">Réf</th>
                 <th class="px-2 py-2 text-left">Délai</th>
                 <th class="px-2 py-2 text-center">PJ</th>
                 <th class="px-2 py-2 text-center">Actions</th>
@@ -308,7 +323,7 @@
     const USER_PROFILES = {
       "bo@cpst.ma": {
         label: "BUREAU D'ORDRE",
-        service: "BUREAU D'ORDRE",
+        service: "SECRETARIAT",
         canSeeAll: true,
         canEdit: true, // seul BO peut éditer
       },
@@ -411,6 +426,7 @@
       const today = new Date().toISOString().slice(0, 10);
       document.getElementById("date").value = today;
       document.getElementById("delai_reponse").value = "";
+      document.getElementById("reference").value = "";
       applyServiceLock();
     }
 
@@ -474,10 +490,10 @@
     function toggleEditRights() {
       const canEdit = !!(currentProfile && currentProfile.canEdit);
       const isManager =
-        currentProfile &&
-        (currentProfile.email === "bo@cpst.ma" ||
-         currentProfile.email === "dgs@cpst.ma" ||
-         currentProfile.email === "presidente@cpst.ma");
+        currentUser &&
+        (currentUser.email === "bo@cpst.ma" ||
+          currentUser.email === "dgs@cpst.ma" ||
+          currentUser.email === "presidente@cpst.ma");
 
       const btnSave = document.getElementById("btnSave");
       const formSection = document.getElementById("formSection");
@@ -563,7 +579,7 @@
       const tbody = document.getElementById("courriersBody");
       tbody.innerHTML = `
         <tr>
-          <td colspan="8" class="px-3 py-3 text-center text-xs text-slate-400">
+          <td colspan="9" class="px-3 py-3 text-center text-xs text-slate-400">
             Chargement en cours...
           </td>
         </tr>
@@ -601,7 +617,7 @@
         if (!filtered.length) {
           tbody.innerHTML = `
             <tr>
-              <td colspan="8" class="px-3 py-3 text-center text-xs text-slate-400">
+              <td colspan="9" class="px-3 py-3 text-center text-xs text-slate-400">
                 Aucun courrier trouvé.
               </td>
             </tr>
@@ -626,6 +642,7 @@
               ? row.expediteur || ""
               : row.destinataire || "";
           const echeance = row.echeance || "";
+          const reference = row.reference || "";
           const statut = row.statut || "";
           const pjPath = row.piece_jointe_url || null;
           const bucket = currentType === "ARRIVEE" ? BUCKET_ARR : BUCKET_DEP;
@@ -700,6 +717,7 @@
             <td class="px-2 py-2 align-top max-w-xs">
               <div class="line-clamp-2">${expDest}</div>
             </td>
+            <td class="px-2 py-2 align-top">${reference}</td>
             <td class="px-2 py-2 align-top">${echeance || ""}</td>
             <td class="px-2 py-2 align-top text-center">
               ${pjLinkHtml}
@@ -741,6 +759,8 @@
         (document.getElementById("observations").value || "").trim();
       const delaiReponse =
         document.getElementById("delai_reponse").value || null;
+      const reference =
+        (document.getElementById("reference").value || "").trim();
       const fileInput = document.getElementById("pj");
       const file = fileInput.files[0] || null;
 
@@ -804,6 +824,7 @@
         observations,
         piece_jointe_url: pjPath,
         echeance: delaiReponse || null,
+        reference: reference || null,
         statut: null,
       };
 
@@ -817,14 +838,24 @@
 
       const { error } = await supa.from(TABLE_NAME).insert(insertPayload);
 
-      setLoading(false);
-
       if (error) {
         console.error(error);
         showError("Erreur lors de l'enregistrement : " + error.message);
+        setLoading(false);
         return;
       }
 
+      // Si on enregistre un DEPART avec une référence,
+      // on clôt automatiquement le courrier ARRIVEE correspondant.
+      if (type === "DEPART" && reference) {
+        await supa
+          .from(TABLE_NAME)
+          .update({ statut: "CLOS" })
+          .eq("type", "ARRIVEE")
+          .eq("numero", reference);
+      }
+
+      setLoading(false);
       resetForm();
       loadCourriers();
     }
