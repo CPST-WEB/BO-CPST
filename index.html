@@ -48,7 +48,7 @@
     <div id="app" class="hidden">
 
       <!-- En-tête -->
-      <header class="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <header class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 class="text-2xl font-bold text-slate-800">
             <span class="bg-gradient-to-r from-sky-600 to-slate-800 bg-clip-text text-transparent">
@@ -71,7 +71,7 @@
       </header>
 
       <!-- Onglets Arrivée / Départ -->
-      <div class="mb-4 inline-flex rounded-xl bg-white/90 border border-sky-100 shadow-sm">
+      <div class="mb-3 inline-flex rounded-xl bg-white/90 border border-sky-100 shadow-sm">
         <button id="tabArrivee"
                 class="px-4 py-2 text-sm font-semibold rounded-xl bg-slate-800 text-white"
                 onclick="setType('ARRIVEE')">
@@ -90,37 +90,37 @@
       </div>
 
       <!-- Formulaire (BO uniquement) -->
-      <section id="formSection" class="mb-6 bg-white/95 border border-sky-100 rounded-2xl shadow p-4 md:p-6">
+      <section id="formSection" class="mb-4 bg-white/95 border border-sky-100 rounded-2xl shadow p-4 md:p-5">
         <h2 class="text-lg font-semibold text-slate-800 mb-3">Nouveau courrier</h2>
 
-        <form id="courrierForm" class="space-y-4" onsubmit="handleSubmit(event)">
+        <form id="courrierForm" class="space-y-3" onsubmit="handleSubmit(event)">
           <input type="hidden" id="typeCourrier" name="typeCourrier" value="ARRIVEE" />
 
-          <!-- Ligne 1 : Numéro, Date, Service -->
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- Ligne 1 : Numéro, Date, Service, Délai -->
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
             <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">
+              <label class="block text-xs font-semibold text-slate-700 mb-1">
                 N° d'ordre <span class="text-red-500">*</span>
               </label>
               <input id="numero" name="numero" type="text" required
-                     class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
-                     placeholder="Saisir le numéro d'ordre (unique par type)" />
+                     class="w-28 md:w-24 rounded-lg border border-sky-400 bg-sky-50 px-2 py-2 text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600"
+                     placeholder="N°" />
             </div>
 
             <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">
+              <label class="block text-xs font-semibold text-slate-700 mb-1">
                 Date du courrier <span class="text-red-500">*</span>
               </label>
               <input id="date" name="date" type="date" required
-                     class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                     class="w-40 rounded-lg border border-sky-400 bg-sky-50 px-2 py-2 text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600" />
             </div>
 
             <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">
+              <label class="block text-xs font-semibold text-slate-700 mb-1">
                 Service concerné <span class="text-red-500">*</span>
               </label>
               <select id="service" name="service" required
-                      class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+                      class="w-full rounded-lg border border-slate-300 px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
                 <option value="">-- Choisir --</option>
                 <option value="DGS">DGS</option>
                 <option value="SECRETARIAT">SECRETARIAT</option>
@@ -136,6 +136,17 @@
               </select>
               <p id="serviceInfo" class="mt-1 text-[10px] text-slate-400"></p>
             </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">
+                Délai de réponse
+              </label>
+              <input id="delai_reponse" name="delai_reponse" type="date"
+                     class="w-36 rounded-lg border border-slate-300 px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
+              <p class="mt-1 text-[10px] text-slate-400">
+                Alertes : jaune J-3, orange J-2, rouge J-1 (si non clôturé).
+              </p>
+            </div>
           </div>
 
           <!-- Ligne 2 : Objet -->
@@ -148,24 +159,25 @@
                    placeholder="Objet du courrier" />
           </div>
 
-          <!-- Ligne 3 : Expéditeur / Destinataire -->
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">
-              Expéditeur / Destinataire <span class="text-red-500">*</span>
-            </label>
-            <input id="exp_dest" name="exp_dest" type="text" required
-                   class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
-                   placeholder="Nom de l'expéditeur ou du destinataire" />
-          </div>
+          <!-- Ligne 3 : Expéditeur / Destinataire + Observations sur la même ligne -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">
+                Expéditeur / Destinataire <span class="text-red-500">*</span>
+              </label>
+              <input id="exp_dest" name="exp_dest" type="text" required
+                     class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                     placeholder="Nom de l'expéditeur ou du destinataire" />
+            </div>
 
-          <!-- Ligne 4 : Observations -->
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">
-              Observations
-            </label>
-            <textarea id="observations" name="observations" rows="2"
-                      class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
-                      placeholder="Remarques, instructions, etc."></textarea>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">
+                Observations
+              </label>
+              <textarea id="observations" name="observations" rows="2"
+                        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                        placeholder="Remarques, instructions, etc."></textarea>
+            </div>
           </div>
 
           <!-- Ligne 4 bis : Références (jusqu'à 3 courriers liés) -->
@@ -174,71 +186,60 @@
               Références (courriers liés)
             </label>
 
-            <div class="space-y-2">
-              <!-- Ligne 1 -->
-              <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
-                <div class="md:col-span-1">
-                  <span class="block text-[11px] text-slate-500 mb-1">N° 1</span>
-                  <input id="ref1_num" type="text"
-                         class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
-                         placeholder="Ex : 11" />
-                </div>
-                <div class="md:col-span-1">
-                  <span class="block text-[11px] text-slate-500 mb-1">Date 1</span>
-                  <input id="ref1_date" type="date"
-                         class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
-                </div>
-
-                <div class="md:col-span-1">
-                  <span class="block text-[11px] text-slate-500 mb-1">N° 2</span>
-                  <input id="ref2_num" type="text"
-                         class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
-                </div>
-                <div class="md:col-span-1">
-                  <span class="block text-[11px] text-slate-500 mb-1">Date 2</span>
-                  <input id="ref2_date" type="date"
-                         class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
-                </div>
+            <div class="grid grid-cols-2 md:grid-cols-6 gap-2">
+              <!-- N°1 -->
+              <div>
+                <span class="block text-[11px] text-slate-500 mb-1">N° 1</span>
+                <input id="ref1_num" type="text"
+                       class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500"
+                       placeholder="11" />
+              </div>
+              <!-- Date1 -->
+              <div>
+                <span class="block text-[11px] text-slate-500 mb-1">Date 1</span>
+                <input id="ref1_date" type="date"
+                       class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500" />
               </div>
 
-              <!-- Ligne 2 -->
-              <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
-                <div class="md:col-span-1">
-                  <span class="block text-[11px] text-slate-500 mb-1">N° 3</span>
-                  <input id="ref3_num" type="text"
-                         class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
-                </div>
-                <div class="md:col-span-1">
-                  <span class="block text-[11px] text-slate-500 mb-1">Date 3</span>
-                  <input id="ref3_date" type="date"
-                         class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
-                </div>
+              <!-- N°2 -->
+              <div>
+                <span class="block text-[11px] text-slate-500 mb-1">N° 2</span>
+                <input id="ref2_num" type="text"
+                       class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500"
+                       placeholder="25" />
+              </div>
+              <!-- Date2 -->
+              <div>
+                <span class="block text-[11px] text-slate-500 mb-1">Date 2</span>
+                <input id="ref2_date" type="date"
+                       class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500" />
+              </div>
+
+              <!-- N°3 -->
+              <div>
+                <span class="block text-[11px] text-slate-500 mb-1">N° 3</span>
+                <input id="ref3_num" type="text"
+                       class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500"
+                       placeholder="54" />
+              </div>
+              <!-- Date3 -->
+              <div>
+                <span class="block text-[11px] text-slate-500 mb-1">Date 3</span>
+                <input id="ref3_date" type="date"
+                       class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500" />
               </div>
             </div>
 
             <p class="mt-1 text-[10px] text-slate-400">
               Exemple : si ce courrier est une réponse aux courriers Arrivée
               n° 11 du 20/11/2025 et n° 25 du 30/11/2025, remplissez
-              « N°1 = 11, Date1 = 20/11/2025 » et « N°2 = 25, Date2 = 30/11/2025 ».
-              Pour la clôture automatique, on prendra la référence la plus récente
-              (celle avec la date la plus récente).
+              « N°1 = 11 / Date1 = 20/11/2025 » et « N°2 = 25 / Date2 = 30/11/2025 ».
+              Pour la clôture automatique, on prendra la référence la plus récente (date la plus grande).
             </p>
           </div>
 
-          <!-- Ligne 5 : Délai de réponse -->
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">
-              Délai de réponse
-            </label>
-            <input id="delai_reponse" name="delai_reponse" type="date"
-                   class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
-            <p class="mt-1 text-[10px] text-slate-400">
-              Utilisé pour les alertes de suivi : jaune J-3, orange J-2, rouge J-1 (tant que non clôturé).
-            </p>
-          </div>
-
-          <!-- Ligne 6 : Pièce jointe -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+          <!-- Ligne 5 : Pièce jointe -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 items-center">
             <div>
               <label class="block text-xs font-semibold text-slate-600 mb-1">
                 Pièce jointe (PDF, image, …)
@@ -257,7 +258,7 @@
           </div>
 
           <!-- Boutons -->
-          <div class="flex items-center gap-3 pt-2">
+          <div class="flex items-center gap-3 pt-1">
             <button type="submit"
                     id="btnSave"
                     class="inline-flex items-center gap-2 rounded-xl bg-sky-700 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-600 disabled:opacity-60 disabled:cursor-not-allowed">
@@ -314,7 +315,7 @@
       </section>
 
       <!-- Liste des courriers -->
-      <section class="bg-white/95 border border-sky-100 rounded-2xl shadow p-4 md:p-6">
+      <section class="bg-white/95 border border-sky-100 rounded-2xl shadow p-4 md:p-5">
         <div class="flex items-center justify-between mb-3">
           <h2 class="text-lg font-semibold text-slate-800">
             Liste des courriers <span id="labelListe">Arrivée</span>
@@ -366,7 +367,7 @@
     // ========= PROFILS UTILISATEURS =========
     const USER_PROFILES = {
       "bo@cpst.ma": {
-        label: "BUREAU D'ORDRE (SECRETARIAT)",
+        label: "BUREAU D'ORDRE",
         service: "SECRETARIAT",
         canSeeAll: true,
         canEdit: true   // seul BO peut créer / supprimer / clôturer
@@ -545,13 +546,8 @@
       const formSection = document.getElementById("formSection");
       const btnSave = document.getElementById("btnSave");
 
-      // Formulaire + bouton seulement pour le BO
-      if (formSection) {
-        formSection.classList.toggle("hidden", !canEdit);
-      }
-      if (btnSave) {
-        btnSave.classList.toggle("hidden", !canEdit);
-      }
+      if (formSection) formSection.classList.toggle("hidden", !canEdit);
+      if (btnSave) btnSave.classList.toggle("hidden", !canEdit);
     }
 
     // ========= AUTH =========
@@ -627,7 +623,7 @@
         const date = document.getElementById(`ref${i}_date`)?.value || "";
 
         if (num && date) {
-          pairs.push({ num, date }); // date ISO (YYYY-MM-DD)
+          pairs.push({ num, date }); // date ISO
         }
       }
 
@@ -656,9 +652,7 @@
           .order("date", { ascending: false });
 
         const dateExact = document.getElementById("filterDateExact").value;
-        if (dateExact) {
-          query = query.eq("date", dateExact);
-        }
+        if (dateExact) query = query.eq("date", dateExact);
 
         const { data, error } = await query;
 
@@ -672,7 +666,7 @@
 
         let filtered = data || [];
 
-        // Filtre par service (pour les services simples)
+        // Filtre par service
         if (currentProfile && !currentProfile.canSeeAll && currentProfile.service) {
           filtered = filtered.filter(
             row => (row.service || "") === currentProfile.service
@@ -699,6 +693,15 @@
             return full.includes(search);
           });
         }
+
+        // Tri par numéro décroissant puis date décroissante
+        filtered.sort((a, b) => {
+          const na = Number(a.numero || 0);
+          const nb = Number(b.numero || 0);
+          if (!Number.isNaN(nb - na) && nb !== na) return nb - na;
+          if (a.date === b.date) return 0;
+          return a.date < b.date ? 1 : -1;
+        });
 
         if (!filtered.length) {
           tbody.innerHTML = `
@@ -732,11 +735,11 @@
           const pjPath = row.piece_jointe_url || null;
           const bucket = currentType === "ARRIVEE" ? BUCKET_ARR : BUCKET_DEP;
 
-          // --- Références affichées ---
+          // Références affichées
           let reference = "";
           if (row.reference) {
             try {
-              const list = JSON.parse(row.reference); // tableau [{num,date},...]
+              const list = JSON.parse(row.reference);
               if (Array.isArray(list)) {
                 reference = list
                   .map(r => `${r.num} (${r.date})`)
@@ -744,24 +747,23 @@
               } else {
                 reference = row.reference;
               }
-            } catch (e) {
+            } catch {
               reference = row.reference;
             }
           }
 
-          // --- Lien PJ sécurisé ---
+          // Lien PJ
           let pjLinkHtml = "-";
           if (pjPath) {
             const { data: pub, error: urlErr } = await supa.storage
               .from(bucket)
-              .createSignedUrl(pjPath, 60 * 60); // 1 heure
-
-            if (!urlErr && pub && pub.signedUrl) {
+              .createSignedUrl(pjPath, 60 * 60);
+            if (!urlErr && pub?.signedUrl) {
               pjLinkHtml = `<a href="${pub.signedUrl}" target="_blank" class="text-xs text-sky-700 underline">Ouvrir</a>`;
             }
           }
 
-          // --- Couleur d'alerte (pour tout le monde) si non CLOS ---
+          // Couleur d'alerte si non CLOS
           let rowClass = "";
           if (echeance && statut !== "CLOS") {
             const dDue = new Date(echeance);
@@ -770,13 +772,9 @@
               (dDue - today) / (1000 * 60 * 60 * 24)
             );
 
-            if (diffDays <= 1) {
-              rowClass = "bg-red-100";
-            } else if (diffDays === 2) {
-              rowClass = "bg-orange-100";
-            } else if (diffDays === 3) {
-              rowClass = "bg-yellow-100";
-            }
+            if (diffDays <= 1) rowClass = "bg-red-100";
+            else if (diffDays === 2) rowClass = "bg-orange-100";
+            else if (diffDays === 3) rowClass = "bg-yellow-100";
           }
 
           const canEdit = currentProfile && currentProfile.canEdit;
@@ -863,12 +861,10 @@
       const fileInput = document.getElementById("pj");
       const file = fileInput.files[0] || null;
 
-      // Références : jusqu'à 3 couples (numéro + date)
+      // Références
       const refPairs = getReferencePairs();
       let refString = null;
-      if (refPairs.length) {
-        refString = JSON.stringify(refPairs);
-      }
+      if (refPairs.length) refString = JSON.stringify(refPairs);
 
       if (!numero || !date || !service || !objet || !exp_dest) {
         showError("Merci de remplir tous les champs obligatoires (*).");
@@ -881,6 +877,7 @@
 
       setLoading(true);
 
+      // 1) Unicité numéro/type
       const { data: existing, error: existErr } = await supa
         .from(TABLE_NAME)
         .select("id, numero")
@@ -902,6 +899,61 @@
         return;
       }
 
+      // 2) Cohérence numéro / date
+      const numInt = Number(numero);
+      if (Number.isNaN(numInt)) {
+        showError("Le numéro d'ordre doit être un nombre (1,2,3...).");
+        setLoading(false);
+        return;
+      }
+
+      const { data: allSameType, error: ordErr } = await supa
+        .from(TABLE_NAME)
+        .select("numero, date")
+        .eq("type", type);
+
+      if (ordErr) {
+        console.error(ordErr);
+        showError("Erreur lors du contrôle des numéros : " + ordErr.message);
+        setLoading(false);
+        return;
+      }
+
+      for (const row of allSameType || []) {
+        if (!row.numero || !row.date) continue;
+        const n = Number(row.numero);
+        if (Number.isNaN(n)) continue;
+
+        if (n > numInt && row.date < date) {
+          showError(
+            "Incohérence : le numéro " +
+              n +
+              " a une date " +
+              row.date +
+              " antérieure à la date du numéro " +
+              numero +
+              "."
+          );
+          setLoading(false);
+          return;
+        }
+
+        if (n < numInt && row.date > date) {
+          showError(
+            "Incohérence : le numéro " +
+              n +
+              " avec la date " +
+              row.date +
+              " est plus récent que le numéro " +
+              numero +
+              "."
+          );
+          setLoading(false);
+          return;
+        }
+      }
+
+      // 3) Upload PJ
       let pjPath = null;
       if (file) {
         const bucketName = type === "ARRIVEE" ? BUCKET_ARR : BUCKET_DEP;
@@ -921,6 +973,7 @@
         pjPath = upData.path;
       }
 
+      // 4) Insert
       const insertPayload = {
         type,
         numero,
@@ -951,15 +1004,14 @@
         return;
       }
 
-      // Clôture automatique : courrier DEPART avec références
+      // 5) Clôture auto : DEPART + référence la plus récente
       if (type === "DEPART" && refPairs.length) {
         const sorted = [...refPairs].sort((a, b) => {
           if (a.date < b.date) return -1;
           if (a.date > b.date) return 1;
           return 0;
         });
-
-        const latest = sorted[sorted.length - 1]; // plus récente
+        const latest = sorted[sorted.length - 1];
 
         await supa
           .from(TABLE_NAME)
