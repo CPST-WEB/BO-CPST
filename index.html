@@ -141,7 +141,7 @@
           <!-- Ligne 2 : Objet -->
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">
-              L'objet du courrier <span class="text-red-500">*</span>
+              Objet du courrier <span class="text-red-500">*</span>
             </label>
             <input id="objet" name="objet" type="text" required
                    class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
@@ -168,18 +168,60 @@
                       placeholder="Remarques, instructions, etc."></textarea>
           </div>
 
-          <!-- Ligne 4 bis : Référence -->
+          <!-- Ligne 4 bis : Références (jusqu'à 3 courriers liés) -->
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">
-              Référence(s)
+              Références (courriers liés)
             </label>
-            <input id="reference" name="reference" type="text"
-                   class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
-                   placeholder="Ex : 11 20/11/2025, 25 30/11/2025" />
+
+            <div class="space-y-2">
+              <!-- Ligne 1 -->
+              <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
+                <div class="md:col-span-1">
+                  <span class="block text-[11px] text-slate-500 mb-1">N° 1</span>
+                  <input id="ref1_num" type="text"
+                         class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                         placeholder="Ex : 11" />
+                </div>
+                <div class="md:col-span-1">
+                  <span class="block text-[11px] text-slate-500 mb-1">Date 1</span>
+                  <input id="ref1_date" type="date"
+                         class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                </div>
+
+                <div class="md:col-span-1">
+                  <span class="block text-[11px] text-slate-500 mb-1">N° 2</span>
+                  <input id="ref2_num" type="text"
+                         class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                </div>
+                <div class="md:col-span-1">
+                  <span class="block text-[11px] text-slate-500 mb-1">Date 2</span>
+                  <input id="ref2_date" type="date"
+                         class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                </div>
+              </div>
+
+              <!-- Ligne 2 -->
+              <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
+                <div class="md:col-span-1">
+                  <span class="block text-[11px] text-slate-500 mb-1">N° 3</span>
+                  <input id="ref3_num" type="text"
+                         class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                </div>
+                <div class="md:col-span-1">
+                  <span class="block text-[11px] text-slate-500 mb-1">Date 3</span>
+                  <input id="ref3_date" type="date"
+                         class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                </div>
+              </div>
+            </div>
+
             <p class="mt-1 text-[10px] text-slate-400">
-              Un courrier peut avoir plusieurs références (code + date). Exemple :
-              « 11 20/11/2025, 25 30/11/2025 ».
-              Pour la clôture automatique on utilise les codes (11, 25…).
+              Exemple : si ce courrier est une réponse aux courriers Arrivée
+              n° 11 du 20/11/2025 et n° 25 du 30/11/2025, remplissez
+              « N°1 = 11, Date1 = 20/11/2025 » et « N°2 = 25, Date2 = 30/11/2025 ».
+              Pour la clôture automatique, on prendra la référence la plus récente
+              (celle avec la date la plus récente).
             </p>
           </div>
 
@@ -324,10 +366,10 @@
     // ========= PROFILS UTILISATEURS =========
     const USER_PROFILES = {
       "bo@cpst.ma": {
-        label: "BUREAU D'ORDRE",
+        label: "BUREAU D'ORDRE (SECRETARIAT)",
         service: "SECRETARIAT",
         canSeeAll: true,
-        canEdit: true   // seul BO peut créer / supprimer
+        canEdit: true   // seul BO peut créer / supprimer / clôturer
       },
       "dgs@cpst.ma": {
         label: "DGS",
@@ -425,10 +467,19 @@
     function resetForm() {
       document.getElementById("courrierForm").reset();
       document.getElementById("typeCourrier").value = currentType;
+
       const today = new Date().toISOString().slice(0, 10);
       document.getElementById("date").value = today;
       document.getElementById("delai_reponse").value = "";
-      document.getElementById("reference").value = "";
+
+      // vider les références
+      for (let i = 1; i <= 3; i++) {
+        const n = document.getElementById(`ref${i}_num`);
+        const d = document.getElementById(`ref${i}_date`);
+        if (n) n.value = "";
+        if (d) d.value = "";
+      }
+
       applyServiceLock();
     }
 
@@ -529,6 +580,7 @@
 
         applyServiceLock();
         toggleEditRights();
+        loadCourriers();
       } else {
         currentProfile = null;
         app.classList.add("hidden");
@@ -559,12 +611,27 @@
       }
 
       setSession(data.user);
-      loadCourriers();
     }
 
     async function handleLogout() {
       await supa.auth.signOut();
       setSession(null);
+    }
+
+    // ========= RÉFÉRENCES (N° + DATE) =========
+    function getReferencePairs() {
+      const pairs = [];
+
+      for (let i = 1; i <= 3; i++) {
+        const num = (document.getElementById(`ref${i}_num`)?.value || "").trim();
+        const date = document.getElementById(`ref${i}_date`)?.value || "";
+
+        if (num && date) {
+          pairs.push({ num, date }); // date ISO (YYYY-MM-DD)
+        }
+      }
+
+      return pairs;
     }
 
     // ========= CHARGER LA LISTE =========
@@ -661,10 +728,26 @@
               ? row.expediteur || ""
               : row.destinataire || "";
           const echeance = row.echeance || "";
-          const reference = row.reference || "";
           const statut = row.statut || "";
           const pjPath = row.piece_jointe_url || null;
           const bucket = currentType === "ARRIVEE" ? BUCKET_ARR : BUCKET_DEP;
+
+          // --- Références affichées ---
+          let reference = "";
+          if (row.reference) {
+            try {
+              const list = JSON.parse(row.reference); // tableau [{num,date},...]
+              if (Array.isArray(list)) {
+                reference = list
+                  .map(r => `${r.num} (${r.date})`)
+                  .join(", ");
+              } else {
+                reference = row.reference;
+              }
+            } catch (e) {
+              reference = row.reference;
+            }
+          }
 
           // --- Lien PJ sécurisé ---
           let pjLinkHtml = "-";
@@ -678,7 +761,7 @@
             }
           }
 
-          // --- Couleur d'alerte pour tout le monde (si non clôturé) ---
+          // --- Couleur d'alerte (pour tout le monde) si non CLOS ---
           let rowClass = "";
           if (echeance && statut !== "CLOS") {
             const dDue = new Date(echeance);
@@ -696,7 +779,6 @@
             }
           }
 
-          // --- Actions (clôture + suppression) pour BO uniquement ---
           const canEdit = currentProfile && currentProfile.canEdit;
           const isClosed = statut === "CLOS";
 
@@ -778,10 +860,15 @@
         (document.getElementById("observations").value || "").trim();
       const delaiReponse =
         document.getElementById("delai_reponse").value || null;
-      const reference =
-        (document.getElementById("reference").value || "").trim();
       const fileInput = document.getElementById("pj");
       const file = fileInput.files[0] || null;
+
+      // Références : jusqu'à 3 couples (numéro + date)
+      const refPairs = getReferencePairs();
+      let refString = null;
+      if (refPairs.length) {
+        refString = JSON.stringify(refPairs);
+      }
 
       if (!numero || !date || !service || !objet || !exp_dest) {
         showError("Merci de remplir tous les champs obligatoires (*).");
@@ -843,7 +930,7 @@
         observations,
         piece_jointe_url: pjPath,
         echeance: delaiReponse || null,
-        reference: reference || null,
+        reference: refString,
         statut: null
       };
 
@@ -864,25 +951,22 @@
         return;
       }
 
-      // Si on enregistre un DEPART avec des références,
-      // on clôt automatiquement les courriers ARRIVEE correspondants.
-      if (type === "DEPART" && reference) {
-        const refCodes = reference
-          .split(/[;,]/)
-          .map(s => s.trim())
-          .map(s => {
-            const m = s.match(/^\d+/); // on prend les chiffres au début
-            return m ? m[0] : null;
-          })
-          .filter(Boolean);
+      // Clôture automatique : courrier DEPART avec références
+      if (type === "DEPART" && refPairs.length) {
+        const sorted = [...refPairs].sort((a, b) => {
+          if (a.date < b.date) return -1;
+          if (a.date > b.date) return 1;
+          return 0;
+        });
 
-        for (const code of refCodes) {
-          await supa
-            .from(TABLE_NAME)
-            .update({ statut: "CLOS" })
-            .eq("type", "ARRIVEE")
-            .eq("numero", code);
-        }
+        const latest = sorted[sorted.length - 1]; // plus récente
+
+        await supa
+          .from(TABLE_NAME)
+          .update({ statut: "CLOS" })
+          .eq("type", "ARRIVEE")
+          .eq("numero", latest.num)
+          .eq("date", latest.date);
       }
 
       setLoading(false);
@@ -890,13 +974,15 @@
       loadCourriers();
     }
 
-    // ========= CLOTURER =========
+    // ========= CLOTURER MANUELLEMENT =========
     async function closeCourrier(id) {
       if (!currentUser) return;
+
       if (!currentProfile || !currentProfile.canEdit) {
         alert("Vous n'avez pas le droit de clôturer un courrier.");
         return;
       }
+
       if (!confirm("Marquer ce courrier comme 'réponse satisfaite' ?")) return;
 
       showError("");
