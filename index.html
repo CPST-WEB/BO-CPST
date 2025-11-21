@@ -89,7 +89,7 @@
            class="hidden mb-4 rounded-lg border border-red-300 bg-red-50 px-4 py-2 text-sm text-red-700">
       </div>
 
-      <!-- Formulaire -->
+      <!-- Formulaire (BO uniquement) -->
       <section id="formSection" class="mb-6 bg-white/95 border border-sky-100 rounded-2xl shadow p-4 md:p-6">
         <h2 class="text-lg font-semibold text-slate-800 mb-3">Nouveau courrier</h2>
 
@@ -171,14 +171,15 @@
           <!-- Ligne 4 bis : Référence -->
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">
-              Référence
+              Référence(s)
             </label>
             <input id="reference" name="reference" type="text"
                    class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
-                   placeholder="N° d'ordre du courrier lié (ex : 11)" />
+                   placeholder="Ex : 11 20/11/2025, 25 30/11/2025" />
             <p class="mt-1 text-[10px] text-slate-400">
-              Exemple : si une réponse au courrier ARRIVEE n° 11 est enregistrée en DEPART avec la référence 11,
-              le courrier n° 11 sera automatiquement clôturé (plus d’alerte).
+              Un courrier peut avoir plusieurs références (code + date). Exemple :
+              « 11 20/11/2025, 25 30/11/2025 ».
+              Pour la clôture automatique on utilise les codes (11, 25…).
             </p>
           </div>
 
@@ -233,33 +234,34 @@
       <!-- FILTRES + STATISTIQUES -->
       <section class="mb-3 flex flex-col md:flex-row md:items-end md:justify-between gap-3">
         <div class="bg-white/95 border border-sky-100 rounded-2xl shadow p-3 flex-1">
-          <h3 class="text-xs font-semibold text-slate-700 mb-2">Filtrer par date</h3>
-          <div class="flex flex-wrap gap-2 items-center">
+          <h3 class="text-xs font-semibold text-slate-700 mb-2">Filtrer / Rechercher</h3>
+          <div class="flex flex-wrap gap-2 items-end">
             <div>
-              <label class="block text-[11px] text-slate-500 mb-1">Du</label>
-              <input id="filterDateFrom" type="date"
+              <label class="block text-[11px] text-slate-500 mb-1">Date précise</label>
+              <input id="filterDateExact" type="date"
                      class="rounded-lg border border-slate-300 px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500" />
             </div>
-            <div>
-              <label class="block text-[11px] text-slate-500 mb-1">Au</label>
-              <input id="filterDateTo" type="date"
-                     class="rounded-lg border border-slate-300 px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500" />
+            <div class="flex-1 min-w-[200px]">
+              <label class="block text-[11px] text-slate-500 mb-1">Recherche globale</label>
+              <input id="globalSearch" type="text"
+                     placeholder="Numéro, objet, service, expéditeur, référence…"
+                     class="w-full rounded-lg border border-slate-300 px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500" />
             </div>
             <button type="button"
                     onclick="loadCourriers()"
-                    class="mt-4 md:mt-0 rounded-xl bg-sky-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-sky-600">
-              Appliquer le filtre
+                    class="rounded-xl bg-sky-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-sky-600">
+              Appliquer
             </button>
             <button type="button"
-                    onclick="clearDateFilters()"
-                    class="mt-4 md:mt-0 text-[11px] text-slate-500 hover:text-sky-700 underline">
+                    onclick="clearFilters()"
+                    class="text-[11px] text-slate-500 hover:text-sky-700 underline">
               Réinitialiser
             </button>
           </div>
         </div>
 
         <div class="bg-white/95 border border-sky-100 rounded-2xl shadow p-3 w-full md:w-64">
-          <h3 class="text-xs font-semibold text-slate-700 mb-2">Statistiques (période filtrée)</h3>
+          <h3 class="text-xs font-semibold text-slate-700 mb-2">Statistiques (filtre actuel)</h3>
           <p class="text-[11px] text-slate-500 mb-1">
             Total courriers : <span id="statTotal" class="font-semibold text-sky-800">0</span>
           </p>
@@ -325,74 +327,74 @@
         label: "BUREAU D'ORDRE",
         service: "SECRETARIAT",
         canSeeAll: true,
-        canEdit: true, // seul BO peut éditer
+        canEdit: true   // seul BO peut créer / supprimer
       },
       "dgs@cpst.ma": {
         label: "DGS",
         service: "DGS",
         canSeeAll: true,
-        canEdit: false,
+        canEdit: false
       },
       "presidente@cpst.ma": {
         label: "PRÉSIDENTE",
         service: "PRESIDENCE",
         canSeeAll: true,
-        canEdit: false,
+        canEdit: false
       },
       "secretariat@cpst.ma": {
         label: "SECRETARIAT",
         service: "SECRETARIAT",
         canSeeAll: false,
-        canEdit: false,
+        canEdit: false
       },
       "dapc@cpst.ma": {
         label: "DAPC",
         service: "DAPC",
         canSeeAll: false,
-        canEdit: false,
+        canEdit: false
       },
       "safp@cpst.ma": {
         label: "SAFP",
         service: "SAFP",
         canSeeAll: false,
-        canEdit: false,
+        canEdit: false
       },
       "smcsc@cpst.ma": {
         label: "SMCSC",
         service: "SMCSC",
         canSeeAll: false,
-        canEdit: false,
+        canEdit: false
       },
       "satde@cpst.ma": {
         label: "SATDE",
         service: "SATDE",
         canSeeAll: false,
-        canEdit: false,
+        canEdit: false
       },
       "bgpa@cpst.ma": {
         label: "BGPA",
         service: "BGPA",
         canSeeAll: false,
-        canEdit: false,
+        canEdit: false
       },
       "bga@cpst.ma": {
         label: "BGA",
         service: "BGA",
         canSeeAll: false,
-        canEdit: false,
+        canEdit: false
       },
       "srhaj@cpst.ma": {
         label: "SRHAJ",
         service: "SRHAJ",
         canSeeAll: false,
-        canEdit: false,
+        canEdit: false
       },
       "bid@cpst.ma": {
         label: "BID",
         service: "BID",
         canSeeAll: false,
-        canEdit: false,
-      },
+        canEdit: false
+      }
     };
 
     let currentUser = null;
@@ -464,9 +466,9 @@
           : currentProfile?.service || "–";
     }
 
-    function clearDateFilters() {
-      document.getElementById("filterDateFrom").value = "";
-      document.getElementById("filterDateTo").value = "";
+    function clearFilters() {
+      document.getElementById("filterDateExact").value = "";
+      document.getElementById("globalSearch").value = "";
       loadCourriers();
     }
 
@@ -483,27 +485,21 @@
       } else {
         serviceSelect.disabled = false;
         info.textContent =
-          "DGS / PRÉSIDENTE / BO peuvent choisir n'importe quel service.";
+          "Le BO peut choisir n'importe quel service.";
       }
     }
 
     function toggleEditRights() {
       const canEdit = !!(currentProfile && currentProfile.canEdit);
-      const isManager =
-        currentUser &&
-        (currentUser.email === "bo@cpst.ma" ||
-          currentUser.email === "dgs@cpst.ma" ||
-          currentUser.email === "presidente@cpst.ma");
-
-      const btnSave = document.getElementById("btnSave");
       const formSection = document.getElementById("formSection");
+      const btnSave = document.getElementById("btnSave");
 
+      // Formulaire + bouton seulement pour le BO
+      if (formSection) {
+        formSection.classList.toggle("hidden", !canEdit);
+      }
       if (btnSave) {
         btnSave.classList.toggle("hidden", !canEdit);
-      }
-      if (formSection) {
-        // Formulaire visible uniquement pour BO, DGS, PRÉSIDENTE
-        formSection.classList.toggle("hidden", !isManager);
       }
     }
 
@@ -519,7 +515,7 @@
             label: currentUser.email,
             service: null,
             canSeeAll: true,
-            canEdit: false,
+            canEdit: false
           };
 
         currentProfile = profile;
@@ -550,7 +546,7 @@
 
       const { data, error } = await supa.auth.signInWithPassword({
         email,
-        password,
+        password
       });
 
       document.getElementById("btnLogin").disabled = false;
@@ -592,10 +588,10 @@
           .eq("type", currentType)
           .order("date", { ascending: false });
 
-        const from = document.getElementById("filterDateFrom").value;
-        const to = document.getElementById("filterDateTo").value;
-        if (from) query = query.gte("date", from);
-        if (to) query = query.lte("date", to);
+        const dateExact = document.getElementById("filterDateExact").value;
+        if (dateExact) {
+          query = query.eq("date", dateExact);
+        }
 
         const { data, error } = await query;
 
@@ -608,10 +604,33 @@
         }
 
         let filtered = data || [];
+
+        // Filtre par service (pour les services simples)
         if (currentProfile && !currentProfile.canSeeAll && currentProfile.service) {
           filtered = filtered.filter(
-            (row) => (row.service || "") === currentProfile.service
+            row => (row.service || "") === currentProfile.service
           );
+        }
+
+        // Recherche globale
+        const search = document
+          .getElementById("globalSearch")
+          .value.trim()
+          .toLowerCase();
+        if (search) {
+          filtered = filtered.filter(row => {
+            const numero = row.numero || "";
+            const dateC = row.date || "";
+            const service = row.service || "";
+            const objet = row.objet || "";
+            const exp = row.expediteur || "";
+            const dest = row.destinataire || "";
+            const ref = row.reference || "";
+            const obs = row.observations || "";
+            const full =
+              `${numero} ${dateC} ${service} ${objet} ${exp} ${dest} ${ref} ${obs}`.toLowerCase();
+            return full.includes(search);
+          });
         }
 
         if (!filtered.length) {
@@ -677,7 +696,7 @@
             }
           }
 
-          // --- Actions (clôture + suppression) ---
+          // --- Actions (clôture + suppression) pour BO uniquement ---
           const canEdit = currentProfile && currentProfile.canEdit;
           const isClosed = statut === "CLOS";
 
@@ -825,7 +844,7 @@
         piece_jointe_url: pjPath,
         echeance: delaiReponse || null,
         reference: reference || null,
-        statut: null,
+        statut: null
       };
 
       if (type === "ARRIVEE") {
@@ -845,14 +864,25 @@
         return;
       }
 
-      // Si on enregistre un DEPART avec une référence,
-      // on clôt automatiquement le courrier ARRIVEE correspondant.
+      // Si on enregistre un DEPART avec des références,
+      // on clôt automatiquement les courriers ARRIVEE correspondants.
       if (type === "DEPART" && reference) {
-        await supa
-          .from(TABLE_NAME)
-          .update({ statut: "CLOS" })
-          .eq("type", "ARRIVEE")
-          .eq("numero", reference);
+        const refCodes = reference
+          .split(/[;,]/)
+          .map(s => s.trim())
+          .map(s => {
+            const m = s.match(/^\d+/); // on prend les chiffres au début
+            return m ? m[0] : null;
+          })
+          .filter(Boolean);
+
+        for (const code of refCodes) {
+          await supa
+            .from(TABLE_NAME)
+            .update({ statut: "CLOS" })
+            .eq("type", "ARRIVEE")
+            .eq("numero", code);
+        }
       }
 
       setLoading(false);
@@ -913,7 +943,8 @@
     // ========= INIT =========
     document.addEventListener("DOMContentLoaded", async () => {
       const today = new Date().toISOString().slice(0, 10);
-      document.getElementById("date").value = today;
+      const dateInput = document.getElementById("date");
+      if (dateInput) dateInput.value = today;
 
       const { data } = await supa.auth.getUser();
       setSession(data?.user ?? null);
