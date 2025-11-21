@@ -159,7 +159,7 @@
                    placeholder="Objet du courrier" />
           </div>
 
-          <!-- Ligne 3 : Expéditeur / Destinataire + Observations sur la même ligne -->
+          <!-- Ligne 3 : Expéditeur / Destinataire + Observations -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label class="block text-xs font-semibold text-slate-600 mb-1">
@@ -180,7 +180,7 @@
             </div>
           </div>
 
-          <!-- Ligne 4 bis : Références (jusqu'à 3 courriers liés) -->
+          <!-- Ligne 4 : Références (jusqu'à 3 courriers liés) -->
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">
               Références (courriers liés)
@@ -231,10 +231,9 @@
             </div>
 
             <p class="mt-1 text-[10px] text-slate-400">
-              Exemple : si ce courrier est une réponse aux courriers Arrivée
-              n° 11 du 20/11/2025 et n° 25 du 30/11/2025, remplissez
-              « N°1 = 11 / Date1 = 20/11/2025 » et « N°2 = 25 / Date2 = 30/11/2025 ».
-              Pour la clôture automatique, on prendra la référence la plus récente (date la plus grande).
+              Exemple : si ce courrier est une réponse au courrier Arrivée
+              n° 11 du 20/11/2025, mettez N°1 = 11 et Date1 = 20/11/2025.
+              Pour la clôture automatique, on prend la référence la plus récente.
             </p>
           </div>
 
@@ -370,7 +369,7 @@
         label: "BUREAU D'ORDRE",
         service: "SECRETARIAT",
         canSeeAll: true,
-        canEdit: true   // seul BO peut créer / supprimer / clôturer
+        canEdit: true   // seul BO peut créer / modifier / supprimer / clôturer
       },
       "dgs@cpst.ma": {
         label: "DGS",
@@ -445,6 +444,10 @@
     let currentType = "ARRIVEE";
     let isSaving = false;
 
+    // édition
+    let editingId = null;               // id du courrier en cours de modification
+    let lastLoadedCourriers = [];       // cache des courriers affichés
+
     // ========= GESTION UI =========
     function showError(msg) {
       const box = document.getElementById("globalError");
@@ -480,6 +483,11 @@
         if (n) n.value = "";
         if (d) d.value = "";
       }
+
+      // sortir du mode édition
+      editingId = null;
+      const btnSave = document.getElementById("btnSave");
+      if (btnSave) btnSave.textContent = "Enregistrer";
 
       applyServiceLock();
     }
@@ -712,11 +720,13 @@
             </tr>
           `;
           updateCount(0);
+          lastLoadedCourriers = [];
           return;
         }
 
         updateCount(filtered.length);
         tbody.innerHTML = "";
+        lastLoadedCourriers = filtered; // pour l’édition
 
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -784,6 +794,10 @@
           if (canEdit) {
             actionsHtml = `
               <div class="flex flex-col gap-1 items-center">
+                <button class="text-[11px] text-sky-700 hover:underline"
+                        onclick="startEdit('${row.id}')">
+                  Modifier
+                </button>
                 ${
                   isClosed
                     ? '<span class="text-[11px] text-emerald-700 font-semibold">Clôturé</span>'
@@ -832,10 +846,66 @@
         showError("Impossible de contacter Supabase (réseau) : " + err.message);
         tbody.innerHTML = "";
         updateCount(0);
+        lastLoadedCourriers = [];
       }
     }
 
-    // ========= ENREGISTRER =========
+    // ========= PASSER EN MODE ÉDITION =========
+    function startEdit(id) {
+      if (!currentProfile || !currentProfile.canEdit) return;
+
+      const row = lastLoadedCourriers.find(r => r.id === id);
+      if (!row) return;
+
+      currentType = row.type || currentType;
+      document.getElementById("typeCourrier").value = currentType;
+
+      document.getElementById("numero").value = row.numero || "";
+      document.getElementById("date").value = row.date || "";
+      document.getElementById("service").value = row.service || "";
+      document.getElementById("objet").value = row.objet || "";
+      document.getElementById("observations").value = row.observations || "";
+
+      const expDest =
+        currentType === "ARRIVEE" ? row.expediteur || "" : row.destinataire || "";
+      document.getElementById("exp_dest").value = expDest;
+
+      document.getElementById("delai_reponse").value = row.echeance || "";
+
+      // Références → champs refX_num / refX_date
+      for (let i = 1; i <= 3; i++) {
+        const n = document.getElementById(`ref${i}_num`);
+        const d = document.getElementById(`ref${i}_date`);
+        if (n) n.value = "";
+        if (d) d.value = "";
+      }
+      if (row.reference) {
+        try {
+          const list = JSON.parse(row.reference);
+          if (Array.isArray(list)) {
+            list.slice(0, 3).forEach((ref, idx) => {
+              const n = document.getElementById(`ref${idx + 1}_num`);
+              const d = document.getElementById(`ref${idx + 1}_date`);
+              if (n) n.value = ref.num || "";
+              if (d) d.value = ref.date || "";
+            });
+          }
+        } catch (e) {
+          console.warn("Référence non JSON, ignorée pour l’édition", e);
+        }
+      }
+
+      editingId = id;
+      const btnSave = document.getElementById("btnSave");
+      if (btnSave) btnSave.textContent = "Mettre à jour";
+
+      document.getElementById("formSection")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+    }
+
+    // ========= ENREGISTRER / METTRE À JOUR =========
     async function handleSubmit(event) {
       event.preventDefault();
       if (!currentUser || isSaving) return;
@@ -875,51 +945,203 @@
         service = currentProfile.service;
       }
 
+      const numInt = Number(numero);
+      if (Number.isNaN(numInt)) {
+        showError("Le numéro d'ordre doit être un nombre (1,2,3...).");
+        return;
+      }
+
+      // ================= INSERT (NOUVEAU) =================
+      if (!editingId) {
+        setLoading(true);
+
+        // 1) Unicité numéro/type
+        const { data: existing, error: existErr } = await supa
+          .from(TABLE_NAME)
+          .select("id, numero")
+          .eq("type", type)
+          .eq("numero", numero);
+
+        if (existErr) {
+          console.error(existErr);
+          showError("Erreur lors de la vérification du numéro : " + existErr.message);
+          setLoading(false);
+          return;
+        }
+
+        if (existing && existing.length > 0) {
+          showError(
+            "Ce numéro d'ordre existe déjà pour les courriers de type " + type + "."
+          );
+          setLoading(false);
+          return;
+        }
+
+        // 2) Cohérence numéro / date
+        const { data: allSameType, error: ordErr } = await supa
+          .from(TABLE_NAME)
+          .select("numero, date")
+          .eq("type", type);
+
+        if (ordErr) {
+          console.error(ordErr);
+          showError("Erreur lors du contrôle des numéros : " + ordErr.message);
+          setLoading(false);
+          return;
+        }
+
+        for (const row of allSameType || []) {
+          if (!row.numero || !row.date) continue;
+          const n = Number(row.numero);
+          if (Number.isNaN(n)) continue;
+
+          if (n > numInt && row.date < date) {
+            showError(
+              "Incohérence : le numéro " +
+                n +
+                " a une date " +
+                row.date +
+                " antérieure à la date du numéro " +
+                numero +
+                "."
+            );
+            setLoading(false);
+            return;
+          }
+
+          if (n < numInt && row.date > date) {
+            showError(
+              "Incohérence : le numéro " +
+                n +
+                " avec la date " +
+                row.date +
+                " est plus récent que le numéro " +
+                numero +
+                "."
+            );
+            setLoading(false);
+            return;
+          }
+        }
+
+        // 3) Upload PJ
+        let pjPath = null;
+        if (file) {
+          const bucketName = type === "ARRIVEE" ? BUCKET_ARR : BUCKET_DEP;
+          const uniqueName = Date.now() + "_" + file.name.replace(/\s+/g, "_");
+          const { data: upData, error: upErr } = await supa.storage
+            .from(bucketName)
+            .upload(uniqueName, file);
+
+          if (upErr) {
+            console.error(upErr);
+            showError(
+              "Erreur lors de l'upload de la pièce jointe : " + upErr.message
+            );
+            setLoading(false);
+            return;
+          }
+          pjPath = upData.path;
+        }
+
+        // 4) Insert
+        const insertPayload = {
+          type,
+          numero,
+          date,
+          service,
+          objet,
+          observations,
+          piece_jointe_url: pjPath,
+          echeance: delaiReponse || null,
+          reference: refString,
+          statut: null
+        };
+
+        if (type === "ARRIVEE") {
+          insertPayload.expediteur = exp_dest;
+          insertPayload.destinataire = "";
+        } else {
+          insertPayload.expediteur = "";
+          insertPayload.destinataire = exp_dest;
+        }
+
+        const { error } = await supa.from(TABLE_NAME).insert(insertPayload);
+
+        if (error) {
+          console.error(error);
+          showError("Erreur lors de l'enregistrement : " + error.message);
+          setLoading(false);
+          return;
+        }
+
+        // 5) Clôture auto (DEPART + réf dernière)
+        if (type === "DEPART" && refPairs.length) {
+          const sorted = [...refPairs].sort((a, b) => {
+            if (a.date < b.date) return -1;
+            if (a.date > b.date) return 1;
+            return 0;
+          });
+          const latest = sorted[sorted.length - 1];
+
+          await supa
+            .from(TABLE_NAME)
+            .update({ statut: "CLOS" })
+            .eq("type", "ARRIVEE")
+            .eq("numero", latest.num)
+            .eq("date", latest.date);
+        }
+
+        setLoading(false);
+        resetForm();
+        loadCourriers();
+        return;
+      }
+
+      // ================= UPDATE (MODIFICATION) =================
       setLoading(true);
 
-      // 1) Unicité numéro/type
-      const { data: existing, error: existErr } = await supa
-        .from(TABLE_NAME)
-        .select("id, numero")
-        .eq("type", type)
-        .eq("numero", numero);
+      const existingRow = lastLoadedCourriers.find(r => r.id === editingId) || {};
+      const rowType = existingRow.type || type;
 
-      if (existErr) {
-        console.error(existErr);
-        showError("Erreur lors de la vérification du numéro : " + existErr.message);
+      // 1) Unicité numéro/type en excluant l’enregistrement courant
+      const { data: otherSameNum, error: existUpdErr } = await supa
+        .from(TABLE_NAME)
+        .select("id")
+        .eq("type", rowType)
+        .eq("numero", numero)
+        .neq("id", editingId);
+
+      if (existUpdErr) {
+        console.error(existUpdErr);
+        showError("Erreur lors de la vérification du numéro : " + existUpdErr.message);
         setLoading(false);
         return;
       }
 
-      if (existing && existing.length > 0) {
+      if (otherSameNum && otherSameNum.length > 0) {
         showError(
-          "Ce numéro d'ordre existe déjà pour les courriers de type " + type + "."
+          "Ce numéro d'ordre existe déjà pour les courriers de type " + rowType + "."
         );
         setLoading(false);
         return;
       }
 
-      // 2) Cohérence numéro / date
-      const numInt = Number(numero);
-      if (Number.isNaN(numInt)) {
-        showError("Le numéro d'ordre doit être un nombre (1,2,3...).");
-        setLoading(false);
-        return;
-      }
-
-      const { data: allSameType, error: ordErr } = await supa
+      // 2) Cohérence numéro / date en excluant l’enregistrement courant
+      const { data: allUpdSameType, error: ordUpdErr } = await supa
         .from(TABLE_NAME)
-        .select("numero, date")
-        .eq("type", type);
+        .select("id, numero, date")
+        .eq("type", rowType);
 
-      if (ordErr) {
-        console.error(ordErr);
-        showError("Erreur lors du contrôle des numéros : " + ordErr.message);
+      if (ordUpdErr) {
+        console.error(ordUpdErr);
+        showError("Erreur lors du contrôle des numéros : " + ordUpdErr.message);
         setLoading(false);
         return;
       }
 
-      for (const row of allSameType || []) {
+      for (const row of allUpdSameType || []) {
+        if (row.id === editingId) continue;
         if (!row.numero || !row.date) continue;
         const n = Number(row.numero);
         if (Number.isNaN(n)) continue;
@@ -953,75 +1175,59 @@
         }
       }
 
-      // 3) Upload PJ
-      let pjPath = null;
+      // 3) PJ : garder l’ancienne sauf si nouvelle fournie
+      let pjPathUpdate = existingRow.piece_jointe_url || null;
       if (file) {
-        const bucketName = type === "ARRIVEE" ? BUCKET_ARR : BUCKET_DEP;
+        const bucketName = rowType === "ARRIVEE" ? BUCKET_ARR : BUCKET_DEP;
         const uniqueName = Date.now() + "_" + file.name.replace(/\s+/g, "_");
-        const { data: upData, error: upErr } = await supa.storage
+        const { data: upData2, error: upErr2 } = await supa.storage
           .from(bucketName)
           .upload(uniqueName, file);
 
-        if (upErr) {
-          console.error(upErr);
+        if (upErr2) {
+          console.error(upErr2);
           showError(
-            "Erreur lors de l'upload de la pièce jointe : " + upErr.message
+            "Erreur lors de l'upload de la nouvelle pièce jointe : " + upErr2.message
           );
           setLoading(false);
           return;
         }
-        pjPath = upData.path;
+        pjPathUpdate = upData2.path;
       }
 
-      // 4) Insert
-      const insertPayload = {
-        type,
+      // 4) Update complet
+      const updatePayload = {
         numero,
         date,
         service,
         objet,
         observations,
-        piece_jointe_url: pjPath,
         echeance: delaiReponse || null,
         reference: refString,
-        statut: null
+        piece_jointe_url: pjPathUpdate
       };
 
-      if (type === "ARRIVEE") {
-        insertPayload.expediteur = exp_dest;
-        insertPayload.destinataire = "";
+      if (rowType === "ARRIVEE") {
+        updatePayload.expediteur = exp_dest;
+        updatePayload.destinataire = "";
       } else {
-        insertPayload.expediteur = "";
-        insertPayload.destinataire = exp_dest;
+        updatePayload.expediteur = "";
+        updatePayload.destinataire = exp_dest;
       }
 
-      const { error } = await supa.from(TABLE_NAME).insert(insertPayload);
+      const { error: updErr } = await supa
+        .from(TABLE_NAME)
+        .update(updatePayload)
+        .eq("id", editingId);
 
-      if (error) {
-        console.error(error);
-        showError("Erreur lors de l'enregistrement : " + error.message);
-        setLoading(false);
+      setLoading(false);
+
+      if (updErr) {
+        console.error(updErr);
+        showError("Erreur lors de la mise à jour : " + updErr.message);
         return;
       }
 
-      // 5) Clôture auto : DEPART + référence la plus récente
-      if (type === "DEPART" && refPairs.length) {
-        const sorted = [...refPairs].sort((a, b) => {
-          if (a.date < b.date) return -1;
-          if (a.date > b.date) return 1;
-          return 0;
-        });
-        const latest = sorted[sorted.length - 1];
-
-        await supa
-          .from(TABLE_NAME)
-          .update({ statut: "CLOS" })
-          .eq("type", "ARRIVEE")
-          .eq("numero", latest.num)
-          .eq("date", latest.date);
-      }
-
-      setLoading(false);
       resetForm();
       loadCourriers();
     }
