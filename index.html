@@ -2,71 +2,36 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>Bureau d'Ordre – BO CPST</title>
+  <title>Bureau d'Ordre – BO CPST (Desktop Local)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- Tailwind CSS -->
+  <!-- Tailwind (si votre PC n’a pas internet, dites-moi et je vous donne la version 100% offline) -->
   <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- Supabase JS v2 (UMD globale "supabase") -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.48.0/dist/umd/supabase.js"></script>
 </head>
+
 <body class="bg-gradient-to-br from-slate-100 via-sky-50 to-slate-200 min-h-screen">
   <div class="max-w-6xl mx-auto py-6 px-3">
 
-    <!-- ========= ZONE CONNEXION ========= -->
-    <section id="loginArea" class="max-w-md mx-auto bg-white/95 border border-sky-100 rounded-2xl shadow-lg p-6 mb-6">
-      <h2 class="text-xl font-semibold text-slate-800 mb-1">Connexion</h2>
-      <p class="text-xs text-slate-500 mb-4">
-        Entrez votre email professionnel et votre mot de passe Supabase.
-      </p>
-
-      <div id="loginError"
-           class="hidden mb-3 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-700"></div>
-
-      <form onsubmit="handleLogin(event)" class="space-y-3">
-        <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">Email</label>
-          <input id="loginEmail" type="email" required
-                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
-                 placeholder="ex. bo@cpst.ma" />
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">Mot de passe</label>
-          <input id="loginPassword" type="password" required
-                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
-        </div>
-        <button type="submit"
-                id="btnLogin"
-                class="w-full rounded-xl bg-sky-700 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-600 disabled:opacity-60">
-          Se connecter
-        </button>
-      </form>
-    </section>
-
     <!-- ========= APPLICATION PRINCIPALE ========= -->
-    <div id="app" class="hidden">
+    <div id="app">
 
       <!-- En-tête -->
       <header class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 class="text-2xl font-bold text-slate-800">
             <span class="bg-gradient-to-r from-sky-600 to-slate-800 bg-clip-text text-transparent">
-              Bureau d'Ordre – CPST
+              Bureau d'Ordre – CPST (Local PC)
             </span>
           </h1>
           <p class="text-sm text-slate-500">
-            Gestion du courrier arrivée / départ avec pièces jointes (Supabase).
+            Gestion du courrier arrivée / départ avec pièces jointes (100% local).
           </p>
         </div>
         <div class="flex flex-col items-end gap-1 text-xs text-slate-500 bg-white/80 border border-sky-100 rounded-xl px-3 py-2 shadow-sm">
           <div>
-            Utilisateur : <span id="currentUserLabel" class="font-semibold text-slate-800">–</span>
+            Utilisateur : <span id="currentUserLabel" class="font-semibold text-slate-800">BUREAU D’ORDRE</span>
           </div>
-          <button onclick="handleLogout()"
-                  class="text-[11px] underline text-slate-600 hover:text-sky-700">
-            Se déconnecter
-          </button>
+          <div class="text-[11px] text-slate-400">Stockage : Documents\BO-CPST\</div>
         </div>
       </header>
 
@@ -89,7 +54,7 @@
            class="hidden mb-4 rounded-lg border border-red-300 bg-red-50 px-4 py-2 text-sm text-red-700">
       </div>
 
-      <!-- Formulaire (BO uniquement) -->
+      <!-- Formulaire (BO uniquement : ici il est toujours affiché car 1 seul utilisateur) -->
       <section id="formSection" class="mb-4 bg-white/95 border border-sky-100 rounded-2xl shadow p-4 md:p-5">
         <h2 class="text-lg font-semibold text-slate-800 mb-3">Nouveau courrier</h2>
 
@@ -134,7 +99,9 @@
                 <option value="BGPA">BGPA</option>
                 <option value="BIN">BIN</option>
               </select>
-              <p id="serviceInfo" class="mt-1 text-[10px] text-slate-400"></p>
+              <p id="serviceInfo" class="mt-1 text-[10px] text-slate-400">
+                Le BO peut choisir n'importe quel service.
+              </p>
             </div>
 
             <div>
@@ -187,72 +154,53 @@
             </label>
 
             <div class="grid grid-cols-2 md:grid-cols-6 gap-2">
-              <!-- N°1 -->
-              <div>
-                <span class="block text-[11px] text-slate-500 mb-1">N° 1</span>
-                <input id="ref1_num" type="text"
-                       class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500"
-                       placeholder="11" />
+              <div><span class="block text-[11px] text-slate-500 mb-1">N° 1</span>
+                <input id="ref1_num" type="text" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="11" />
               </div>
-              <!-- Date1 -->
-              <div>
-                <span class="block text-[11px] text-slate-500 mb-1">Date 1</span>
-                <input id="ref1_date" type="date"
-                       class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500" />
+              <div><span class="block text-[11px] text-slate-500 mb-1">Date 1</span>
+                <input id="ref1_date" type="date" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500" />
               </div>
 
-              <!-- N°2 -->
-              <div>
-                <span class="block text-[11px] text-slate-500 mb-1">N° 2</span>
-                <input id="ref2_num" type="text"
-                       class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500"
-                       placeholder="25" />
+              <div><span class="block text-[11px] text-slate-500 mb-1">N° 2</span>
+                <input id="ref2_num" type="text" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="25" />
               </div>
-              <!-- Date2 -->
-              <div>
-                <span class="block text-[11px] text-slate-500 mb-1">Date 2</span>
-                <input id="ref2_date" type="date"
-                       class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500" />
+              <div><span class="block text-[11px] text-slate-500 mb-1">Date 2</span>
+                <input id="ref2_date" type="date" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500" />
               </div>
 
-              <!-- N°3 -->
-              <div>
-                <span class="block text-[11px] text-slate-500 mb-1">N° 3</span>
-                <input id="ref3_num" type="text"
-                       class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500"
-                       placeholder="54" />
+              <div><span class="block text-[11px] text-slate-500 mb-1">N° 3</span>
+                <input id="ref3_num" type="text" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="54" />
               </div>
-              <!-- Date3 -->
-              <div>
-                <span class="block text-[11px] text-slate-500 mb-1">Date 3</span>
-                <input id="ref3_date" type="date"
-                       class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500" />
+              <div><span class="block text-[11px] text-slate-500 mb-1">Date 3</span>
+                <input id="ref3_date" type="date" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500" />
               </div>
             </div>
-
-            <p class="mt-1 text-[10px] text-slate-400">
-              Exemple : si ce courrier est une réponse au courrier Arrivée
-              n° 11 du 20/11/2025, mettez N°1 = 11 et Date1 = 20/11/2025.
-              Pour la clôture automatique, on prend la référence la plus récente.
-            </p>
           </div>
 
-          <!-- Ligne 5 : Pièce jointe -->
+          <!-- Ligne 5 : Pièce jointe (Desktop) -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3 items-center">
             <div>
               <label class="block text-xs font-semibold text-slate-600 mb-1">
-                Pièce jointe (PDF, image, …)
+                Pièce(s) jointe(s)
               </label>
-              <input id="pj" type="file"
-                     class="w-full text-sm text-slate-600
-                            file:mr-2 file:rounded-lg file:border-0
-                            file:bg-sky-700 file:px-3 file:py-1.5 file:text-sm file:font-semibold
-                            file:text-white hover:file:bg-sky-600" />
+
+              <div class="flex items-center gap-2">
+                <button type="button"
+                        onclick="pickAttachments()"
+                        class="rounded-xl bg-slate-800 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-700">
+                  Choisir fichier(s)
+                </button>
+                <span id="pjLabel" class="text-xs text-slate-500">Aucun fichier sélectionné</span>
+              </div>
+
+              <p class="mt-1 text-[10px] text-slate-400">
+                Les PJ seront copiées dans Documents\BO-CPST\pieces_jointes\
+              </p>
             </div>
 
             <div class="text-xs text-slate-500">
-              <p>• Pour le courrier <strong>ARRIVEE</strong>, les PJ vont dans le bucket <code>bo_pj_arr</code>.</p>
-              <p>• Pour le courrier <strong>DEPART</strong>, les PJ vont dans le bucket <code>bo_pj_dep</code>.</p>
+              <p>• Version locale : pas de bucket, pas d’internet.</p>
+              <p>• Les liens PJ ouvrent directement le fichier sur le PC.</p>
             </div>
           </div>
 
@@ -261,7 +209,7 @@
             <button type="submit"
                     id="btnSave"
                     class="inline-flex items-center gap-2 rounded-xl bg-sky-700 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-600 disabled:opacity-60 disabled:cursor-not-allowed">
-              <span>Enregistrer</span>
+              <span id="btnSaveLabel">Enregistrer</span>
               <span id="spinner" class="hidden animate-spin border-2 border-white border-r-transparent rounded-full h-4 w-4"></span>
             </button>
             <button type="button"
@@ -308,7 +256,7 @@
             Total courriers : <span id="statTotal" class="font-semibold text-sky-800">0</span>
           </p>
           <p class="text-[11px] text-slate-500">
-            Pour le service : <span id="statService" class="font-semibold text-sky-800">–</span>
+            Pour le service : <span id="statService" class="font-semibold text-sky-800">Tous</span>
           </p>
         </div>
       </section>
@@ -340,115 +288,30 @@
                 <th class="px-2 py-2 text-center">Actions</th>
               </tr>
             </thead>
-            <tbody id="courriersBody" class="divide-y divide-slate-100 bg-white">
-              <!-- lignes générées en JS -->
-            </tbody>
+            <tbody id="courriersBody" class="divide-y divide-slate-100 bg-white"></tbody>
           </table>
         </div>
       </section>
     </div>
   </div>
 
-  <!-- ====================== SCRIPT JS ====================== -->
   <script>
-    // ========= CONFIG SUPABASE =========
-    const SUPABASE_URL = "https://ltymaadmjdqpvmpjbxbr.supabase.co";
-    const SUPABASE_ANON_KEY =
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx0eW1hYWRtamRxcHZtcGpieGJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxNTUxMjYsImV4cCI6MjA3ODczMTEyNn0.K7f-eB2mVd-2lomo9-qI4xWW7X3sFDOzx1ukB4OAgmo";
-
-    const TABLE_NAME = "courriers";
-    const BUCKET_ARR = "bo_pj_arr";
-    const BUCKET_DEP = "bo_pj_dep";
-
-    const { createClient } = supabase;
-    const supa = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    // ========= PROFILS UTILISATEURS =========
-    const USER_PROFILES = {
-      "bo@cpst.ma": {
-        label: "BUREAU D'ORDRE",
-        service: "BUREAU D'ORDRE",
-        canSeeAll: true,
-        canEdit: true   // seul BO peut créer / modifier / supprimer / clôturer
-      },
-      "dgs@cpst.ma": {
-        label: "DGS",
-        service: "DGS",
-        canSeeAll: true,
-        canEdit: false
-      },
-      "presidente@cpst.ma": {
-        label: "PRÉSIDENTE",
-        service: "PRESIDENCE",
-        canSeeAll: true,
-        canEdit: false
-      },
-      "secretariat@cpst.ma": {
-        label: "SECRETARIAT",
-        service: "SECRETARIAT",
-        canSeeAll: false,
-        canEdit: false
-      },
-      "dapc@cpst.ma": {
-        label: "DAPC",
-        service: "DAPC",
-        canSeeAll: false,
-        canEdit: false
-      },
-      "safp@cpst.ma": {
-        label: "SAFP",
-        service: "SAFP",
-        canSeeAll: false,
-        canEdit: false
-      },
-      "smcsc@cpst.ma": {
-        label: "SMCSC",
-        service: "SMCSC",
-        canSeeAll: false,
-        canEdit: false
-      },
-      "satde@cpst.ma": {
-        label: "SATDE",
-        service: "SATDE",
-        canSeeAll: false,
-        canEdit: false
-      },
-      "bgpa@cpst.ma": {
-        label: "BGPA",
-        service: "BGPA",
-        canSeeAll: false,
-        canEdit: false
-      },
-      "bga@cpst.ma": {
-        label: "BGA",
-        service: "BGA",
-        canSeeAll: false,
-        canEdit: false
-      },
-      "srhaj@cpst.ma": {
-        label: "SRHAJ",
-        service: "SRHAJ",
-        canSeeAll: false,
-        canEdit: false
-      },
-      "bid@cpst.ma": {
-        label: "BID",
-        service: "BID",
-        canSeeAll: false,
-        canEdit: false
-      }
+    // ====== PROFIL UNIQUE ======
+    const currentProfile = {
+      label: "BUREAU D'ORDRE",
+      canEdit: true,
+      canSeeAll: true,
+      service: null
     };
 
-    let currentUser = null;
-    let currentProfile = null;
     let currentType = "ARRIVEE";
     let isSaving = false;
+    let editingId = null;
+    let lastLoadedCourriers = [];
 
-    // édition
-    let editingId = null;               // id du courrier en cours de modification
-    let lastLoadedCourriers = [];       // cache des courriers affichés
+    // PJ sélectionnées depuis dialogue Windows (nécessaire en Desktop)
+    let selectedFiles = [];
 
-    // ========= GESTION UI =========
     function showError(msg) {
       const box = document.getElementById("globalError");
       if (!msg) {
@@ -464,8 +327,19 @@
       isSaving = loading;
       document.getElementById("btnSave").disabled = loading;
       const spinner = document.getElementById("spinner");
-      if (loading) spinner.classList.remove("hidden");
-      else spinner.classList.add("hidden");
+      spinner.classList.toggle("hidden", !loading);
+    }
+
+    async function pickAttachments() {
+      selectedFiles = await window.BO_DESKTOP.pickFiles();
+      const label = document.getElementById("pjLabel");
+      if (!selectedFiles.length) {
+        label.textContent = "Aucun fichier sélectionné";
+      } else if (selectedFiles.length === 1) {
+        label.textContent = selectedFiles[0].name;
+      } else {
+        label.textContent = selectedFiles.length + " fichiers sélectionnés";
+      }
     }
 
     function resetForm() {
@@ -476,20 +350,16 @@
       document.getElementById("date").value = today;
       document.getElementById("delai_reponse").value = "";
 
-      // vider les références
       for (let i = 1; i <= 3; i++) {
-        const n = document.getElementById(`ref${i}_num`);
-        const d = document.getElementById(`ref${i}_date`);
-        if (n) n.value = "";
-        if (d) d.value = "";
+        document.getElementById(`ref${i}_num`).value = "";
+        document.getElementById(`ref${i}_date`).value = "";
       }
 
-      // sortir du mode édition
-      editingId = null;
-      const btnSave = document.getElementById("btnSave");
-      if (btnSave) btnSave.textContent = "Enregistrer";
+      selectedFiles = [];
+      document.getElementById("pjLabel").textContent = "Aucun fichier sélectionné";
 
-      applyServiceLock();
+      editingId = null;
+      document.getElementById("btnSaveLabel").textContent = "Enregistrer";
     }
 
     function setType(type) {
@@ -502,13 +372,11 @@
 
       if (type === "ARRIVEE") {
         tabArr.classList.add("bg-slate-800", "text-white");
-        tabArr.classList.remove("text-slate-700", "bg-white");
         tabDep.classList.remove("bg-slate-800", "text-white");
         tabDep.classList.add("text-slate-700", "bg-white");
         labelListe.textContent = "Arrivée";
       } else {
         tabDep.classList.add("bg-slate-800", "text-white");
-        tabDep.classList.remove("text-slate-700", "bg-white");
         tabArr.classList.remove("bg-slate-800", "text-white");
         tabArr.classList.add("text-slate-700", "bg-white");
         labelListe.textContent = "Départ";
@@ -520,10 +388,7 @@
     function updateCount(count) {
       document.getElementById("countBadge").textContent = count + " enreg.";
       document.getElementById("statTotal").textContent = count;
-      document.getElementById("statService").textContent =
-        currentProfile && currentProfile.canSeeAll
-          ? "Tous"
-          : currentProfile?.service || "–";
+      document.getElementById("statService").textContent = "Tous";
     }
 
     function clearFilters() {
@@ -532,162 +397,36 @@
       loadCourriers();
     }
 
-    function applyServiceLock() {
-      const serviceSelect = document.getElementById("service");
-      const info = document.getElementById("serviceInfo");
-      if (!currentProfile) return;
-
-      if (!currentProfile.canSeeAll && currentProfile.service) {
-        serviceSelect.value = currentProfile.service;
-        serviceSelect.disabled = true;
-        info.textContent =
-          "Votre service est fixé à " + currentProfile.service + ".";
-      } else {
-        serviceSelect.disabled = false;
-        info.textContent =
-          "Le BO peut choisir n'importe quel service.";
-      }
-    }
-
-    function toggleEditRights() {
-      const canEdit = !!(currentProfile && currentProfile.canEdit);
-      const formSection = document.getElementById("formSection");
-      const btnSave = document.getElementById("btnSave");
-
-      if (formSection) formSection.classList.toggle("hidden", !canEdit);
-      if (btnSave) btnSave.classList.toggle("hidden", !canEdit);
-    }
-
-    // ========= AUTH =========
-    function setSession(user) {
-      currentUser = user || null;
-      const app = document.getElementById("app");
-      const loginArea = document.getElementById("loginArea");
-
-      if (currentUser) {
-        const profile =
-          USER_PROFILES[currentUser.email] || {
-            label: currentUser.email,
-            service: null,
-            canSeeAll: true,
-            canEdit: false
-          };
-
-        currentProfile = profile;
-
-        document.getElementById("currentUserLabel").textContent =
-          profile.label +
-          (profile.service ? " (" + profile.service + ")" : "");
-
-        loginArea.classList.add("hidden");
-        app.classList.remove("hidden");
-
-        applyServiceLock();
-        toggleEditRights();
-        loadCourriers();
-      } else {
-        currentProfile = null;
-        app.classList.add("hidden");
-        loginArea.classList.remove("hidden");
-      }
-    }
-
-    async function handleLogin(event) {
-      event.preventDefault();
-      document.getElementById("loginError").classList.add("hidden");
-      const email = document.getElementById("loginEmail").value.trim();
-      const password = document.getElementById("loginPassword").value;
-
-      document.getElementById("btnLogin").disabled = true;
-
-      const { data, error } = await supa.auth.signInWithPassword({
-        email,
-        password
-      });
-
-      document.getElementById("btnLogin").disabled = false;
-
-      if (error) {
-        const box = document.getElementById("loginError");
-        box.textContent = "Connexion impossible : " + error.message;
-        box.classList.remove("hidden");
-        return;
-      }
-
-      setSession(data.user);
-    }
-
-    async function handleLogout() {
-      await supa.auth.signOut();
-      setSession(null);
-    }
-
-    // ========= RÉFÉRENCES (N° + DATE) =========
     function getReferencePairs() {
       const pairs = [];
-
       for (let i = 1; i <= 3; i++) {
         const num = (document.getElementById(`ref${i}_num`)?.value || "").trim();
         const date = document.getElementById(`ref${i}_date`)?.value || "";
-
-        if (num && date) {
-          pairs.push({ num, date }); // date ISO
-        }
+        if (num && date) pairs.push({ num, date });
       }
-
       return pairs;
     }
 
-    // ========= CHARGER LA LISTE =========
     async function loadCourriers() {
-      if (!currentUser) return;
-
       showError("");
+
       const tbody = document.getElementById("courriersBody");
       tbody.innerHTML = `
-        <tr>
-          <td colspan="9" class="px-3 py-3 text-center text-xs text-slate-400">
-            Chargement en cours...
-          </td>
-        </tr>
+        <tr><td colspan="9" class="px-3 py-3 text-center text-xs text-slate-400">Chargement…</td></tr>
       `;
 
       try {
-        let query = supa
-          .from(TABLE_NAME)
-          .select("*")
-          .eq("type", currentType)
-          .order("date", { ascending: false });
+        let data = await window.BO_DESKTOP.list(currentType);
+        data = data || [];
 
+        // filtre date exacte
         const dateExact = document.getElementById("filterDateExact").value;
-        if (dateExact) query = query.eq("date", dateExact);
+        if (dateExact) data = data.filter(r => (r.date || "") === dateExact);
 
-        const { data, error } = await query;
-
-        if (error) {
-          console.error(error);
-          showError("Erreur lors du chargement des courriers : " + error.message);
-          tbody.innerHTML = "";
-          updateCount(0);
-          return;
-        }
-
-        let filtered = data || [];
-
-        // Filtre par service
-        if (currentProfile && !currentProfile.canSeeAll && currentProfile.service) {
-          filtered = filtered.filter(
-            row => (row.service || "") === currentProfile.service
-          );
-        }
-
-        // Recherche globale
-        const search = document
-          .getElementById("globalSearch")
-          .value.trim()
-          .toLowerCase();
+        // recherche globale
+        const search = (document.getElementById("globalSearch").value || "").trim().toLowerCase();
         if (search) {
-          filtered = filtered.filter(row => {
+          data = data.filter(row => {
             const numero = row.numero || "";
             const dateC = row.date || "";
             const service = row.service || "";
@@ -696,14 +435,12 @@
             const dest = row.destinataire || "";
             const ref = row.reference || "";
             const obs = row.observations || "";
-            const full =
-              `${numero} ${dateC} ${service} ${objet} ${exp} ${dest} ${ref} ${obs}`.toLowerCase();
-            return full.includes(search);
+            return (`${numero} ${dateC} ${service} ${objet} ${exp} ${dest} ${ref} ${obs}`).toLowerCase().includes(search);
           });
         }
 
-        // Tri par numéro décroissant puis date décroissante
-        filtered.sort((a, b) => {
+        // tri (comme avant)
+        data.sort((a, b) => {
           const na = Number(a.numero || 0);
           const nb = Number(b.numero || 0);
           if (!Number.isNaN(nb - na) && nb !== na) return nb - na;
@@ -711,111 +448,71 @@
           return a.date < b.date ? 1 : -1;
         });
 
-        if (!filtered.length) {
+        lastLoadedCourriers = data;
+
+        if (!data.length) {
           tbody.innerHTML = `
-            <tr>
-              <td colspan="9" class="px-3 py-3 text-center text-xs text-slate-400">
-                Aucun courrier trouvé.
-              </td>
-            </tr>
+            <tr><td colspan="9" class="px-3 py-3 text-center text-xs text-slate-400">Aucun courrier trouvé.</td></tr>
           `;
           updateCount(0);
-          lastLoadedCourriers = [];
           return;
         }
 
-        updateCount(filtered.length);
+        updateCount(data.length);
         tbody.innerHTML = "";
-        lastLoadedCourriers = filtered; // pour l’édition
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        const today = new Date(); today.setHours(0,0,0,0);
 
-        for (const row of filtered) {
+        for (const row of data) {
           const numero = row.numero || "";
           const dateC = row.date || "";
           const service = row.service || "";
           const objet = row.objet || "";
-          const expDest =
-            currentType === "ARRIVEE"
-              ? row.expediteur || ""
-              : row.destinataire || "";
+          const expDest = (currentType === "ARRIVEE") ? (row.expediteur || "") : (row.destinataire || "");
           const echeance = row.echeance || "";
           const statut = row.statut || "";
-          const pjPath = row.piece_jointe_url || null;
-          const bucket = currentType === "ARRIVEE" ? BUCKET_ARR : BUCKET_DEP;
 
-          // Références affichées
+          // références affichées
           let reference = "";
           if (row.reference) {
             try {
               const list = JSON.parse(row.reference);
-              if (Array.isArray(list)) {
-                reference = list
-                  .map(r => `${r.num} (${r.date})`)
-                  .join(", ");
-              } else {
-                reference = row.reference;
-              }
-            } catch {
-              reference = row.reference;
-            }
+              if (Array.isArray(list)) reference = list.map(r => `${r.num} (${r.date})`).join(", ");
+              else reference = row.reference;
+            } catch { reference = row.reference; }
           }
 
-          // Lien PJ
+          // PJ: on affiche "Ouvrir" si au moins une PJ
           let pjLinkHtml = "-";
-          if (pjPath) {
-            const { data: pub, error: urlErr } = await supa.storage
-              .from(bucket)
-              .createSignedUrl(pjPath, 60 * 60);
-            if (!urlErr && pub?.signedUrl) {
-              pjLinkHtml = `<a href="${pub.signedUrl}" target="_blank" class="text-xs text-sky-700 underline">Ouvrir</a>`;
-            }
+          if (row.attachments && row.attachments.length) {
+            pjLinkHtml = row.attachments.map(a =>
+              `<button class="text-xs text-sky-700 underline" onclick="openPJ(${a.id})">${a.original_name}</button>`
+            ).join("<br/>");
           }
 
-          // Couleur d'alerte si non CLOS
+          // alertes
           let rowClass = "";
           if (echeance && statut !== "CLOS") {
-            const dDue = new Date(echeance);
-            dDue.setHours(0, 0, 0, 0);
-            const diffDays = Math.floor(
-              (dDue - today) / (1000 * 60 * 60 * 24)
-            );
-
+            const dDue = new Date(echeance); dDue.setHours(0,0,0,0);
+            const diffDays = Math.floor((dDue - today) / (1000*60*60*24));
             if (diffDays <= 1) rowClass = "bg-red-100";
             else if (diffDays === 2) rowClass = "bg-orange-100";
             else if (diffDays === 3) rowClass = "bg-yellow-100";
           }
 
-          const canEdit = currentProfile && currentProfile.canEdit;
           const isClosed = statut === "CLOS";
 
-          let actionsHtml = "";
-          if (canEdit) {
-            actionsHtml = `
-              <div class="flex flex-col gap-1 items-center">
-                <button class="text-[11px] text-sky-700 hover:underline"
-                        onclick="startEdit('${row.id}')">
-                  Modifier
-                </button>
-                ${
-                  isClosed
-                    ? '<span class="text-[11px] text-emerald-700 font-semibold">Clôturé</span>'
-                    : `<button class="text-[11px] text-emerald-700 hover:underline"
-                               onclick="closeCourrier('${row.id}')">
-                         Réponse satisfaite
-                       </button>`
-                }
-                <button class="text-[11px] text-red-600 hover:underline"
-                        onclick="deleteCourrier('${row.id}')">
-                  Supprimer
-                </button>
-              </div>
-            `;
-          } else if (isClosed) {
-            actionsHtml =
-              '<span class="text-[11px] text-emerald-700 font-semibold">Clôturé</span>';
-          }
+          const actionsHtml = `
+            <div class="flex flex-col gap-1 items-center">
+              <button class="text-[11px] text-sky-700 hover:underline" onclick="startEdit(${row.id})">Modifier</button>
+              ${
+                isClosed
+                  ? '<span class="text-[11px] text-emerald-700 font-semibold">Clôturé</span>'
+                  : `<button class="text-[11px] text-emerald-700 hover:underline" onclick="closeCourrier(${row.id})">Réponse satisfaite</button>`
+              }
+              <button class="text-[11px] text-red-600 hover:underline" onclick="deleteCourrier(${row.id})">Supprimer</button>
+            </div>
+          `;
 
           const tr = document.createElement("tr");
           if (rowClass) tr.className = rowClass;
@@ -824,36 +521,30 @@
             <td class="px-2 py-2 align-top">${numero}</td>
             <td class="px-2 py-2 align-top">${dateC}</td>
             <td class="px-2 py-2 align-top">${service}</td>
-            <td class="px-2 py-2 align-top max-w-xs">
-              <div class="line-clamp-2">${objet}</div>
-            </td>
-            <td class="px-2 py-2 align-top max-w-xs">
-              <div class="line-clamp-2">${expDest}</div>
-            </td>
+            <td class="px-2 py-2 align-top max-w-xs"><div class="line-clamp-2">${objet}</div></td>
+            <td class="px-2 py-2 align-top max-w-xs"><div class="line-clamp-2">${expDest}</div></td>
             <td class="px-2 py-2 align-top">${reference}</td>
             <td class="px-2 py-2 align-top">${echeance || ""}</td>
-            <td class="px-2 py-2 align-top text-center">
-              ${pjLinkHtml}
-            </td>
-            <td class="px-2 py-2 align-top text-center">
-              ${actionsHtml}
-            </td>
+            <td class="px-2 py-2 align-top text-center">${pjLinkHtml}</td>
+            <td class="px-2 py-2 align-top text-center">${actionsHtml}</td>
           `;
           tbody.appendChild(tr);
         }
+
       } catch (err) {
         console.error(err);
-        showError("Impossible de contacter Supabase (réseau) : " + err.message);
+        showError("Erreur locale : " + (err.message || err));
         tbody.innerHTML = "";
         updateCount(0);
         lastLoadedCourriers = [];
       }
     }
 
-    // ========= PASSER EN MODE ÉDITION =========
-    function startEdit(id) {
-      if (!currentProfile || !currentProfile.canEdit) return;
+    async function openPJ(attId) {
+      await window.BO_DESKTOP.openAttachment(attId);
+    }
 
+    function startEdit(id) {
       const row = lastLoadedCourriers.find(r => r.id === id);
       if (!row) return;
 
@@ -866,83 +557,58 @@
       document.getElementById("objet").value = row.objet || "";
       document.getElementById("observations").value = row.observations || "";
 
-      const expDest =
-        currentType === "ARRIVEE" ? row.expediteur || "" : row.destinataire || "";
+      const expDest = (currentType === "ARRIVEE") ? (row.expediteur || "") : (row.destinataire || "");
       document.getElementById("exp_dest").value = expDest;
 
       document.getElementById("delai_reponse").value = row.echeance || "";
 
-      // Références → champs refX_num / refX_date
       for (let i = 1; i <= 3; i++) {
-        const n = document.getElementById(`ref${i}_num`);
-        const d = document.getElementById(`ref${i}_date`);
-        if (n) n.value = "";
-        if (d) d.value = "";
+        document.getElementById(`ref${i}_num`).value = "";
+        document.getElementById(`ref${i}_date`).value = "";
       }
       if (row.reference) {
         try {
           const list = JSON.parse(row.reference);
           if (Array.isArray(list)) {
             list.slice(0, 3).forEach((ref, idx) => {
-              const n = document.getElementById(`ref${idx + 1}_num`);
-              const d = document.getElementById(`ref${idx + 1}_date`);
-              if (n) n.value = ref.num || "";
-              if (d) d.value = ref.date || "";
+              document.getElementById(`ref${idx + 1}_num`).value = ref.num || "";
+              document.getElementById(`ref${idx + 1}_date`).value = ref.date || "";
             });
           }
-        } catch (e) {
-          console.warn("Référence non JSON, ignorée pour l’édition", e);
-        }
+        } catch {}
       }
+
+      // PJ: par défaut on ne change pas les anciennes, sauf si vous re-choisissez fichier(s)
+      selectedFiles = [];
+      document.getElementById("pjLabel").textContent = "Aucun fichier sélectionné";
 
       editingId = id;
-      const btnSave = document.getElementById("btnSave");
-      if (btnSave) btnSave.textContent = "Mettre à jour";
+      document.getElementById("btnSaveLabel").textContent = "Mettre à jour";
 
-      document.getElementById("formSection")?.scrollIntoView({
-        behavior: "smooth",
-        block: "start"
-      });
+      document.getElementById("formSection")?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
-    // ========= ENREGISTRER / METTRE À JOUR =========
     async function handleSubmit(event) {
       event.preventDefault();
-      if (!currentUser || isSaving) return;
-
-      if (!currentProfile || !currentProfile.canEdit) {
-        showError("Vous n'avez pas le droit d'enregistrer un courrier.");
-        return;
-      }
+      if (isSaving) return;
 
       showError("");
 
       const type = currentType;
       const numero = (document.getElementById("numero").value || "").trim();
       const date = document.getElementById("date").value;
-      const serviceSelect = document.getElementById("service");
-      let service = serviceSelect.value;
+      const service = document.getElementById("service").value;
       const objet = (document.getElementById("objet").value || "").trim();
       const exp_dest = (document.getElementById("exp_dest").value || "").trim();
-      const observations =
-        (document.getElementById("observations").value || "").trim();
-      const delaiReponse =
-        document.getElementById("delai_reponse").value || null;
-      const fileInput = document.getElementById("pj");
-      const file = fileInput.files[0] || null;
+      const observations = (document.getElementById("observations").value || "").trim();
+      const delaiReponse = document.getElementById("delai_reponse").value || null;
 
-      // Références
       const refPairs = getReferencePairs();
-      let refString = null;
-      if (refPairs.length) refString = JSON.stringify(refPairs);
+      const refString = refPairs.length ? JSON.stringify(refPairs) : null;
 
       if (!numero || !date || !service || !objet || !exp_dest) {
         showError("Merci de remplir tous les champs obligatoires (*).");
         return;
-      }
-
-      if (currentProfile && !currentProfile.canSeeAll && currentProfile.service) {
-        service = currentProfile.service;
       }
 
       const numInt = Number(numero);
@@ -951,349 +617,80 @@
         return;
       }
 
-      // ================= INSERT (NOUVEAU) =================
-      if (!editingId) {
-        setLoading(true);
+      setLoading(true);
 
-        // 1) Unicité numéro/type
-        const { data: existing, error: existErr } = await supa
-          .from(TABLE_NAME)
-          .select("id, numero")
-          .eq("type", type)
-          .eq("numero", numero);
+      try {
+        if (!editingId) {
+          const record = {
+            type, numero, date, service, objet,
+            observations,
+            echeance: delaiReponse,
+            reference: refString,
+            statut: null,
+            expediteur: (type === "ARRIVEE") ? exp_dest : "",
+            destinataire: (type === "DEPART") ? exp_dest : ""
+          };
 
-        if (existErr) {
-          console.error(existErr);
-          showError("Erreur lors de la vérification du numéro : " + existErr.message);
-          setLoading(false);
-          return;
-        }
+          await window.BO_DESKTOP.create({ record, files: selectedFiles });
 
-        if (existing && existing.length > 0) {
-          showError(
-            "Ce numéro d'ordre existe déjà pour les courriers de type " + type + "."
-          );
-          setLoading(false);
-          return;
-        }
-
-        // 2) Cohérence numéro / date
-        const { data: allSameType, error: ordErr } = await supa
-          .from(TABLE_NAME)
-          .select("numero, date")
-          .eq("type", type);
-
-        if (ordErr) {
-          console.error(ordErr);
-          showError("Erreur lors du contrôle des numéros : " + ordErr.message);
-          setLoading(false);
-          return;
-        }
-
-        for (const row of allSameType || []) {
-          if (!row.numero || !row.date) continue;
-          const n = Number(row.numero);
-          if (Number.isNaN(n)) continue;
-
-          if (n > numInt && row.date < date) {
-            showError(
-              "Incohérence : le numéro " +
-                n +
-                " a une date " +
-                row.date +
-                " antérieure à la date du numéro " +
-                numero +
-                "."
-            );
-            setLoading(false);
-            return;
-          }
-
-          if (n < numInt && row.date > date) {
-            showError(
-              "Incohérence : le numéro " +
-                n +
-                " avec la date " +
-                row.date +
-                " est plus récent que le numéro " +
-                numero +
-                "."
-            );
-            setLoading(false);
-            return;
-          }
-        }
-
-        // 3) Upload PJ
-        let pjPath = null;
-        if (file) {
-          const bucketName = type === "ARRIVEE" ? BUCKET_ARR : BUCKET_DEP;
-          const uniqueName = Date.now() + "_" + file.name.replace(/\s+/g, "_");
-          const { data: upData, error: upErr } = await supa.storage
-            .from(bucketName)
-            .upload(uniqueName, file);
-
-          if (upErr) {
-            console.error(upErr);
-            showError(
-              "Erreur lors de l'upload de la pièce jointe : " + upErr.message
-            );
-            setLoading(false);
-            return;
-          }
-          pjPath = upData.path;
-        }
-
-        // 4) Insert
-        const insertPayload = {
-          type,
-          numero,
-          date,
-          service,
-          objet,
-          observations,
-          piece_jointe_url: pjPath,
-          echeance: delaiReponse || null,
-          reference: refString,
-          statut: null
-        };
-
-        if (type === "ARRIVEE") {
-          insertPayload.expediteur = exp_dest;
-          insertPayload.destinataire = "";
         } else {
-          insertPayload.expediteur = "";
-          insertPayload.destinataire = exp_dest;
-        }
+          const record = {
+            type, numero, date, service, objet,
+            observations,
+            echeance: delaiReponse,
+            reference: refString,
+            expediteur: (type === "ARRIVEE") ? exp_dest : "",
+            destinataire: (type === "DEPART") ? exp_dest : ""
+          };
 
-        const { error } = await supa.from(TABLE_NAME).insert(insertPayload);
+          // si vous avez choisi de nouvelles PJ → on remplace (sinon on garde anciennes)
+          const replaceFiles = selectedFiles.length > 0;
 
-        if (error) {
-          console.error(error);
-          showError("Erreur lors de l'enregistrement : " + error.message);
-          setLoading(false);
-          return;
-        }
-
-        // 5) Clôture auto (DEPART + réf dernière)
-        if (type === "DEPART" && refPairs.length) {
-          const sorted = [...refPairs].sort((a, b) => {
-            if (a.date < b.date) return -1;
-            if (a.date > b.date) return 1;
-            return 0;
+          await window.BO_DESKTOP.update({
+            id: editingId,
+            record,
+            files: selectedFiles,
+            replaceFiles
           });
-          const latest = sorted[sorted.length - 1];
-
-          await supa
-            .from(TABLE_NAME)
-            .update({ statut: "CLOS" })
-            .eq("type", "ARRIVEE")
-            .eq("numero", latest.num)
-            .eq("date", latest.date);
         }
 
         setLoading(false);
         resetForm();
         loadCourriers();
-        return;
-      }
 
-      // ================= UPDATE (MODIFICATION) =================
-      setLoading(true);
-
-      const existingRow = lastLoadedCourriers.find(r => r.id === editingId) || {};
-      const rowType = existingRow.type || type;
-
-      // 1) Unicité numéro/type en excluant l’enregistrement courant
-      const { data: otherSameNum, error: existUpdErr } = await supa
-        .from(TABLE_NAME)
-        .select("id")
-        .eq("type", rowType)
-        .eq("numero", numero)
-        .neq("id", editingId);
-
-      if (existUpdErr) {
-        console.error(existUpdErr);
-        showError("Erreur lors de la vérification du numéro : " + existUpdErr.message);
+      } catch (err) {
+        console.error(err);
         setLoading(false);
-        return;
+        showError(err.message || "Erreur locale pendant l'enregistrement.");
       }
+    }
 
-      if (otherSameNum && otherSameNum.length > 0) {
-        showError(
-          "Ce numéro d'ordre existe déjà pour les courriers de type " + rowType + "."
-        );
-        setLoading(false);
-        return;
+    async function closeCourrier(id) {
+      if (!confirm("Marquer ce courrier comme 'réponse satisfaite' ?")) return;
+      try {
+        await window.BO_DESKTOP.close(id);
+        loadCourriers();
+      } catch (err) {
+        showError(err.message || "Erreur lors de la clôture.");
       }
+    }
 
-      // 2) Cohérence numéro / date en excluant l’enregistrement courant
-      const { data: allUpdSameType, error: ordUpdErr } = await supa
-        .from(TABLE_NAME)
-        .select("id, numero, date")
-        .eq("type", rowType);
-
-      if (ordUpdErr) {
-        console.error(ordUpdErr);
-        showError("Erreur lors du contrôle des numéros : " + ordUpdErr.message);
-        setLoading(false);
-        return;
+    async function deleteCourrier(id) {
+      if (!confirm("Supprimer définitivement ce courrier ?")) return;
+      try {
+        await window.BO_DESKTOP.remove(id);
+        loadCourriers();
+      } catch (err) {
+        showError(err.message || "Erreur lors de la suppression.");
       }
+    }
 
-      for (const row of allUpdSameType || []) {
-        if (row.id === editingId) continue;
-        if (!row.numero || !row.date) continue;
-        const n = Number(row.numero);
-        if (Number.isNaN(n)) continue;
-
-        if (n > numInt && row.date < date) {
-          showError(
-            "Incohérence : le numéro " +
-              n +
-              " a une date " +
-              row.date +
-              " antérieure à la date du numéro " +
-              numero +
-              "."
-          );
-          setLoading(false);
-          return;
-        }
-
-        if (n < numInt && row.date > date) {
-          showError(
-            "Incohérence : le numéro " +
-              n +
-              " avec la date " +
-              row.date +
-              " est plus récent que le numéro " +
-              numero +
-              "."
-          );
-          setLoading(false);
-          return;
-        }
-      }
-
-      // 3) PJ : garder l’ancienne sauf si nouvelle fournie
-      let pjPathUpdate = existingRow.piece_jointe_url || null;
-      if (file) {
-        const bucketName = rowType === "ARRIVEE" ? BUCKET_ARR : BUCKET_DEP;
-        const uniqueName = Date.now() + "_" + file.name.replace(/\s+/g, "_");
-        const { data: upData2, error: upErr2 } = await supa.storage
-          .from(bucketName)
-          .upload(uniqueName, file);
-
-        if (upErr2) {
-          console.error(upErr2);
-          showError(
-            "Erreur lors de l'upload de la nouvelle pièce jointe : " + upErr2.message
-          );
-          setLoading(false);
-          return;
-        }
-        pjPathUpdate = upData2.path;
-      }
-
-      // 4) Update complet
-      const updatePayload = {
-        numero,
-        date,
-        service,
-        objet,
-        observations,
-        echeance: delaiReponse || null,
-        reference: refString,
-        piece_jointe_url: pjPathUpdate
-      };
-
-      if (rowType === "ARRIVEE") {
-        updatePayload.expediteur = exp_dest;
-        updatePayload.destinataire = "";
-      } else {
-        updatePayload.expediteur = "";
-        updatePayload.destinataire = exp_dest;
-      }
-
-      const { error: updErr } = await supa
-        .from(TABLE_NAME)
-        .update(updatePayload)
-        .eq("id", editingId);
-
-      setLoading(false);
-
-      if (updErr) {
-        console.error(updErr);
-        showError("Erreur lors de la mise à jour : " + updErr.message);
-        return;
-      }
-
+    document.addEventListener("DOMContentLoaded", () => {
+      const today = new Date().toISOString().slice(0, 10);
+      document.getElementById("date").value = today;
+      setType("ARRIVEE");
       resetForm();
       loadCourriers();
-    }
-
-    // ========= CLOTURER MANUELLEMENT =========
-    async function closeCourrier(id) {
-      if (!currentUser) return;
-
-      if (!currentProfile || !currentProfile.canEdit) {
-        alert("Vous n'avez pas le droit de clôturer un courrier.");
-        return;
-      }
-
-      if (!confirm("Marquer ce courrier comme 'réponse satisfaite' ?")) return;
-
-      showError("");
-
-      const { error } = await supa
-        .from(TABLE_NAME)
-        .update({ statut: "CLOS" })
-        .eq("id", id);
-
-      if (error) {
-        console.error(error);
-        showError("Erreur lors de la clôture : " + error.message);
-        return;
-      }
-
-      loadCourriers();
-    }
-
-    // ========= SUPPRIMER =========
-    async function deleteCourrier(id) {
-      if (!currentUser) return;
-      if (!currentProfile || !currentProfile.canEdit) {
-        alert("Vous n'avez pas le droit de supprimer un courrier.");
-        return;
-      }
-      if (!confirm("Supprimer définitivement ce courrier ?")) return;
-
-      showError("");
-
-      const { error } = await supa
-        .from(TABLE_NAME)
-        .delete()
-        .eq("id", id);
-
-      if (error) {
-        console.error(error);
-        showError("Erreur lors de la suppression : " + error.message);
-        return;
-      }
-
-      loadCourriers();
-    }
-
-    // ========= INIT =========
-    document.addEventListener("DOMContentLoaded", async () => {
-      const today = new Date().toISOString().slice(0, 10);
-      const dateInput = document.getElementById("date");
-      if (dateInput) dateInput.value = today;
-
-      const { data } = await supa.auth.getUser();
-      setSession(data?.user ?? null);
-
-      setType("ARRIVEE");
     });
   </script>
 </body>
